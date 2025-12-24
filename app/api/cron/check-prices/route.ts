@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { getGiftsForPriceCheck, checkPricesForGifts } from "@/actions/price-actions";
 import { db } from "@/db";
 import { gifts, profiles } from "@/db/schema";
@@ -8,22 +9,16 @@ import { formatCurrency } from "@/lib/utils";
 
 /**
  * Cron job to check prices for all tracked gifts
- * Should be called daily via Vercel Cron or similar service
+ * Triggered daily by Upstash QStash
  *
- * Add to vercel.json:
- * {
- *   "crons": [{
- *     "path": "/api/cron/check-prices",
- *     "schedule": "0 10 * * *"
- *   }]
- * }
+ * Setup:
+ * 1. Sign up at https://console.upstash.com/qstash
+ * 2. Add QSTASH_CURRENT_SIGNING_KEY and QSTASH_NEXT_SIGNING_KEY to .env
+ * 3. Create schedule: POST https://qstash.upstash.io/v2/schedules
+ *    - destination: https://your-app.vercel.app/api/cron/check-prices
+ *    - cron: 0 10 * * * (10 AM daily)
  */
-export async function GET(request: Request) {
-  // Verify cron secret to prevent unauthorized access
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+async function handler(request: Request) {
 
   try {
     // Get all gifts that need price checking
@@ -105,3 +100,5 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export const GET = verifySignatureAppRouter(handler);
