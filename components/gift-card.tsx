@@ -1,11 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, TrendingDown, TrendingUp, BarChart3, Bell, BellOff } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { formatCurrency, calculateSavings } from "@/lib/utils";
 import { togglePurchased, deleteGift } from "@/actions/gift-actions";
+import { togglePriceTracking } from "@/actions/price-actions";
+import { PriceHistoryChart } from "@/components/price-history-chart";
 import { Gift } from "@/db/schema";
 
 interface GiftCardProps {
@@ -13,6 +23,7 @@ interface GiftCardProps {
 }
 
 export function GiftCard({ gift }: GiftCardProps) {
+  const [showPriceHistory, setShowPriceHistory] = useState(false);
   const savings = calculateSavings(gift.targetPrice, gift.currentPrice);
   const hasSavings = savings !== null && savings > 0;
 
@@ -31,6 +42,18 @@ export function GiftCard({ gift }: GiftCardProps) {
       } catch (error) {
         console.error("Failed to delete gift:", error);
       }
+    }
+  };
+
+  const handleToggleTracking = async () => {
+    try {
+      await togglePriceTracking(
+        gift.id,
+        !gift.priceTrackingEnabled,
+        gift.targetPrice
+      );
+    } catch (error) {
+      console.error("Failed to toggle price tracking:", error);
     }
   };
 
@@ -62,6 +85,12 @@ export function GiftCard({ gift }: GiftCardProps) {
             className="object-cover transition-transform group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
+          {gift.priceTrackingEnabled && gift.url && (
+            <div className="absolute top-2 left-2 bg-green-500/90 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+              <Bell className="h-3 w-3" />
+              Tracking
+            </div>
+          )}
         </div>
       )}
       <CardContent className="p-4 space-y-2">
@@ -111,23 +140,65 @@ export function GiftCard({ gift }: GiftCardProps) {
           </p>
         )}
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button
-          onClick={handleTogglePurchased}
-          variant={gift.isPurchased ? "outline" : "default"}
-          className="flex-1"
-          size="sm"
-        >
-          {gift.isPurchased ? "Mark Unpurchased" : "Mark Purchased"}
-        </Button>
-        <Button
-          onClick={handleDelete}
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+        {gift.url && (
+          <div className="flex gap-2 w-full">
+            <Button
+              onClick={handleToggleTracking}
+              variant={gift.priceTrackingEnabled ? "default" : "outline"}
+              size="sm"
+              className="flex-1"
+            >
+              {gift.priceTrackingEnabled ? (
+                <>
+                  <Bell className="h-4 w-4 mr-1" />
+                  Tracking
+                </>
+              ) : (
+                <>
+                  <BellOff className="h-4 w-4 mr-1" />
+                  Track Price
+                </>
+              )}
+            </Button>
+            <Dialog open={showPriceHistory} onOpenChange={setShowPriceHistory}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{gift.name}</DialogTitle>
+                </DialogHeader>
+                <PriceHistoryChart
+                  giftId={gift.id}
+                  giftName={gift.name}
+                  currentPrice={gift.currentPrice}
+                  targetPrice={gift.targetPrice}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+        <div className="flex gap-2 w-full">
+          <Button
+            onClick={handleTogglePurchased}
+            variant={gift.isPurchased ? "outline" : "default"}
+            className="flex-1"
+            size="sm"
+          >
+            {gift.isPurchased ? "Mark Unpurchased" : "Mark Purchased"}
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
