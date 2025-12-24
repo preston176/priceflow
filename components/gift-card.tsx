@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Trash2, TrendingDown, TrendingUp, BarChart3, Bell, BellOff } from "lucide-react";
+import { ExternalLink, Trash2, TrendingDown, TrendingUp, BarChart3, Bell, BellOff, Loader2 } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { formatCurrency, calculateSavings } from "@/lib/utils";
 import { togglePurchased, deleteGift } from "@/actions/gift-actions";
-import { togglePriceTracking } from "@/actions/price-actions";
+import { togglePriceTracking, checkPriceNow } from "@/actions/price-actions";
 import { PriceHistoryChart } from "@/components/price-history-chart";
 import { Gift } from "@/db/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface GiftCardProps {
   gift: Gift;
@@ -24,6 +25,8 @@ interface GiftCardProps {
 
 export function GiftCard({ gift }: GiftCardProps) {
   const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const [isCheckingPrice, setIsCheckingPrice] = useState(false);
+  const { toast } = useToast();
   const savings = calculateSavings(gift.targetPrice, gift.currentPrice);
   const hasSavings = savings !== null && savings > 0;
 
@@ -46,14 +49,56 @@ export function GiftCard({ gift }: GiftCardProps) {
   };
 
   const handleToggleTracking = async () => {
+    const wasEnabled = gift.priceTrackingEnabled;
+
     try {
+      setIsCheckingPrice(true);
+
+      // Toggle tracking
       await togglePriceTracking(
         gift.id,
-        !gift.priceTrackingEnabled,
+        !wasEnabled,
         gift.targetPrice
       );
+
+      // If enabling tracking, immediately check the price
+      if (!wasEnabled && gift.url) {
+        toast({
+          title: "Checking price...",
+          description: "Fetching current price from product page",
+        });
+
+        const result = await checkPriceNow(gift.id);
+
+        if (result.success && result.price) {
+          toast({
+            title: "Price tracking enabled!",
+            description: `Current price: ${formatCurrency(result.price)}`,
+          });
+        } else {
+          toast({
+            title: "Tracking enabled",
+            description: result.error || "Could not fetch price automatically. Try 'Check Now' in price history.",
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: wasEnabled ? "Tracking disabled" : "Tracking enabled",
+          description: wasEnabled
+            ? "Price tracking has been turned off"
+            : "Price tracking has been turned on",
+        });
+      }
     } catch (error) {
       console.error("Failed to toggle price tracking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update price tracking",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingPrice(false);
     }
   };
 
@@ -148,8 +193,14 @@ export function GiftCard({ gift }: GiftCardProps) {
               variant={gift.priceTrackingEnabled ? "default" : "outline"}
               size="sm"
               className="flex-1"
+              disabled={isCheckingPrice}
             >
-              {gift.priceTrackingEnabled ? (
+              {isCheckingPrice ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Checking...
+                </>
+              ) : gift.priceTrackingEnabled ? (
                 <>
                   <Bell className="h-4 w-4 mr-1" />
                   Tracking
