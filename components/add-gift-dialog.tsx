@@ -21,11 +21,18 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/image-upload";
 import { addGift } from "@/actions/gift-actions";
+import { List } from "@/db/schema";
 
-export function AddGiftDialog() {
+interface AddGiftDialogProps {
+  lists: List[];
+  currentListId?: string;
+}
+
+export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    listId: currentListId || "",
     name: "",
     url: "",
     imageUrl: "",
@@ -42,6 +49,7 @@ export function AddGiftDialog() {
     try {
       await addGift(formData);
       setFormData({
+        listId: currentListId || "",
         name: "",
         url: "",
         imageUrl: "",
@@ -73,6 +81,29 @@ export function AddGiftDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
+            {lists.length > 0 && (
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="listId">Add to List *</Label>
+                <Select
+                  value={formData.listId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, listId: value })
+                  }
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lists.map((list) => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2 col-span-2">
               <Label htmlFor="name">Gift Name *</Label>
               <Input

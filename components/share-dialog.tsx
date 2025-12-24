@@ -15,16 +15,24 @@ import { getOrCreateShareToken, regenerateShareToken } from "@/actions/share-act
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function ShareDialog() {
+interface ShareDialogProps {
+  listId?: string;
+  listName?: string;
+}
+
+export function ShareDialog({ listId, listName }: ShareDialogProps) {
   const [open, setOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const loadShareUrl = async () => {
+    if (!listId) {
+      return;
+    }
     setLoading(true);
     try {
-      const token = await getOrCreateShareToken();
+      const token = await getOrCreateShareToken(listId);
       const url = `${window.location.origin}/share/${token}`;
       setShareUrl(url);
     } catch (error) {
@@ -35,9 +43,12 @@ export function ShareDialog() {
   };
 
   const handleRegenerate = async () => {
+    if (!listId) {
+      return;
+    }
     setLoading(true);
     try {
-      const token = await regenerateShareToken();
+      const token = await regenerateShareToken(listId);
       const url = `${window.location.origin}/share/${token}`;
       setShareUrl(url);
     } catch (error) {
@@ -63,16 +74,18 @@ export function ShareDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" disabled={!listId}>
           <Share2 className="h-4 w-4" />
           Share
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share Your Wishlist</DialogTitle>
+          <DialogTitle>
+            Share {listName ? `"${listName}"` : "Your Wishlist"}
+          </DialogTitle>
           <DialogDescription>
-            Share this link with family and friends so they can see your wishlist.
+            Share this link with family and friends so they can see this wishlist.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
