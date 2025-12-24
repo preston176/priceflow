@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { gifts, profiles } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { extractProductMetadata } from "@/lib/price-scraper";
+import { extractProductMetadata, extractMetadataFromScreenshot } from "@/lib/price-scraper";
 
 interface AddGiftInput {
   listId?: string;
@@ -205,6 +205,28 @@ export async function fetchProductInfo(url: string) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch product info",
+    };
+  }
+}
+
+/**
+ * Extract product information from screenshot using Gemini Vision
+ * Returns product name and price
+ */
+export async function analyzeProductScreenshot(imageBase64: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const metadata = await extractMetadataFromScreenshot(imageBase64);
+    return metadata;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to analyze screenshot",
     };
   }
 }

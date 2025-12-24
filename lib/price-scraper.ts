@@ -522,6 +522,82 @@ JSON:`;
 }
 
 /**
+ * Extract product metadata from screenshot using Gemini Vision
+ * Analyzes product page screenshots to extract name, price, and image
+ */
+export async function extractMetadataFromScreenshot(
+  imageBase64: string
+): Promise<{
+  success: boolean;
+  name?: string;
+  price?: number;
+  error?: string;
+}> {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return {
+        success: false,
+        error: "GEMINI_API_KEY not configured",
+      };
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `You are analyzing a screenshot of a product page. Extract the following information:
+
+1. Product Name/Title
+2. Current Price (if there's both sale and original price, use the sale price)
+
+Return ONLY a JSON object in this exact format:
+{
+  "name": "Product Name Here",
+  "price": 19.99
+}
+
+If any field is not found, use null for that field.
+For price, return only the number without currency symbol.
+Be precise - only extract what you see clearly in the screenshot.
+
+JSON:`;
+
+    // Remove data URL prefix if present
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/jpeg",
+        },
+      },
+    ]);
+
+    const text = result.response.text().trim();
+
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return { success: false, error: "Could not parse AI response" };
+    }
+
+    const data = JSON.parse(jsonMatch[0]);
+
+    return {
+      success: true,
+      name: data.name || undefined,
+      price: data.price ? parseFloat(data.price) : undefined,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Vision AI failed",
+    };
+  }
+}
+
+/**
  * Clean HTML for LLM processing
  * Removes scripts, styles, and reduces noise
  */
