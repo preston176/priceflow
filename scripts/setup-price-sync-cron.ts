@@ -28,7 +28,7 @@ if (!CRON_SECRET) {
 
 async function setupCron() {
   console.log("🚀 Setting up QStash cron job for price syncing...");
-  console.log(`🔑 Token (first 20 chars): ${QSTASH_TOKEN.substring(0, 20)}...`);
+  console.log(`🔑 Token (first 20 chars): ${QSTASH_TOKEN?.substring(0, 20)}...`);
 
   const destinationUrl = `${APP_URL}/api/cron/update-prices`;
   console.log(`📍 Target URL: ${destinationUrl}`);

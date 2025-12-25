@@ -64,13 +64,17 @@ export async function POST(req: Request) {
           if (newPrice < oldPrice && newPrice <= targetPrice) {
             console.log(`Price drop detected! Sending alert to ${userEmail}`);
 
-            await sendPriceAlertEmail(
-              userEmail!,
-              gift.name,
-              oldPrice,
-              newPrice,
-              targetPrice
-            );
+            const savings = (oldPrice - newPrice).toFixed(2);
+
+            await sendPriceAlertEmail({
+              to: userEmail!,
+              userName: userEmail!.split('@')[0], // Use email username as fallback
+              giftName: gift.name,
+              oldPrice: `$${oldPrice.toFixed(2)}`,
+              newPrice: `$${newPrice.toFixed(2)}`,
+              savings: `$${savings}`,
+              productUrl: gift.url || undefined,
+            });
 
             priceDrops++;
           }
