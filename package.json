@@ -1,6 +1,6 @@
 {
-  "name": "giftflow",
-  "version": "0.1.0",
+  "name": "zawadi",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -25,13 +25,16 @@
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slider": "^1.3.6",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
     "@upstash/qstash": "^2.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.38.3",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.468.0",
     "next": "15.1.6",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.5.6",
@@ -42,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",

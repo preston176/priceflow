@@ -16,6 +16,7 @@ import { formatCurrency, calculateSavings } from "@/lib/utils";
 import { togglePurchased, deleteGift } from "@/actions/gift-actions";
 import { togglePriceTracking, checkPriceNow } from "@/actions/price-actions";
 import { PriceHistoryChart } from "@/components/price-history-chart";
+import { UpdatePriceDialog } from "@/components/update-price-dialog";
 import { Gift } from "@/db/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -186,6 +187,9 @@ export function GiftCard({ gift }: GiftCardProps) {
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+        <div className="flex gap-2 w-full">
+          <UpdatePriceDialog gift={gift} />
+        </div>
         {gift.url && (
           <div className="flex gap-2 w-full">
             <Button

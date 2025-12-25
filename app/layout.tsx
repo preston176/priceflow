@@ -7,8 +7,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GiftFlow - Holiday Budget & Wishlist Tracker",
-  description: "Track your holiday budget and manage gift wishlists with ease",
+  title: "Zawadi - Smart Holiday Gift Tracker",
+  description: "Your intelligent companion for stress-free holiday shopping. Track budgets, manage wishlists, and make gift-giving joyful again.",
 };
 
 export default function RootLayout({

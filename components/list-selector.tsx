@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, FolderOpen, Archive, Pencil, Trash2 } from "lucide-react";
+import { Plus, FolderOpen, Archive, Pencil, Trash2, MoreVertical, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,11 +17,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { List } from "@/db/schema";
-import { createList } from "@/actions/list-actions";
+import { createList, archiveList, duplicateList, deleteList } from "@/actions/list-actions";
 import { LIST_TEMPLATES } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 
 interface ListSelectorProps {
   lists: List[];
@@ -34,14 +42,18 @@ export function ListSelector({
   currentListId,
   onListChange,
 }: ListSelectorProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     budget: "",
   });
   const [useTemplate, setUseTemplate] = useState<string | null>(null);
+
+  const currentList = lists.find((l) => l.id === currentListId);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +80,52 @@ export function ListSelector({
     setUseTemplate(template.name);
   };
 
+  const handleArchive = async () => {
+    if (!currentListId) return;
+    setActionLoading(true);
+    try {
+      await archiveList(currentListId);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to archive list:", error);
+      alert(error instanceof Error ? error.message : "Failed to archive list");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!currentListId) return;
+    setActionLoading(true);
+    try {
+      const newList = await duplicateList(currentListId);
+      onListChange(newList.id);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to duplicate list:", error);
+      alert(error instanceof Error ? error.message : "Failed to duplicate list");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentListId) return;
+    if (!confirm("Are you sure you want to delete this list? This action cannot be undone.")) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await deleteList(currentListId);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete list:", error);
+      alert(error instanceof Error ? error.message : "Failed to delete list");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Select value={currentListId} onValueChange={onListChange}>
@@ -84,6 +142,35 @@ export function ListSelector({
           ))}
         </SelectContent>
       </Select>
+
+      {currentListId && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" disabled={actionLoading}>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleDuplicate}>
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicate for Next Year
+            </DropdownMenuItem>
+            {!currentList?.isDefault && (
+              <>
+                <DropdownMenuItem onClick={handleArchive}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>

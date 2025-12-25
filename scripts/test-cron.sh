@@ -5,19 +5,22 @@
 
 set -e
 
+# TEMPORARY: Hardcoded values from .env (remove after setup)
+CRON_SECRET="${CRON_SECRET}"
+NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+
 echo "🧪 Cron Endpoint Testing"
 echo "======================="
 echo ""
 
 # Check if CRON_SECRET is set
 if [ -z "$CRON_SECRET" ]; then
-  echo "❌ Error: CRON_SECRET not found in environment"
-  echo "Please add it to your .env file"
+  echo "❌ Error: CRON_SECRET not found"
   exit 1
 fi
 
-# Default to localhost
-APP_URL="${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+# Use configured URL
+APP_URL="$NEXT_PUBLIC_APP_URL"
 
 echo "Testing endpoints at: $APP_URL"
 echo ""

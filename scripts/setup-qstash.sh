@@ -5,27 +5,30 @@
 
 set -e
 
+# TEMPORARY: Hardcoded values from .env (remove after setup)
+QSTASH_TOKEN="${QSTASH_TOKEN}"
+QSTASH_CURRENT_SIGNING_KEY="${QSTASH_CURRENT_SIGNING_KEY}"
+QSTASH_NEXT_SIGNING_KEY="${QSTASH_NEXT_SIGNING_KEY}"
+CRON_SECRET="${CRON_SECRET}"
+NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+
 echo "🚀 QStash Schedule Setup for Zawadi"
 echo "===================================="
 echo ""
 
-# Check if required env vars are set
+# Check if required vars are set
 if [ -z "$QSTASH_TOKEN" ]; then
-  echo "❌ Error: QSTASH_TOKEN not found in environment"
-  echo "Please add it to your .env file and run: source .env"
+  echo "❌ Error: QSTASH_TOKEN not found"
   exit 1
 fi
 
 if [ -z "$CRON_SECRET" ]; then
-  echo "❌ Error: CRON_SECRET not found in environment"
-  echo "Please generate one with: openssl rand -base64 32"
-  echo "Then add it to your .env file"
+  echo "❌ Error: CRON_SECRET not found"
   exit 1
 fi
 
 if [ -z "$NEXT_PUBLIC_APP_URL" ]; then
-  echo "❌ Error: NEXT_PUBLIC_APP_URL not found in environment"
-  echo "Please add your production URL to .env (e.g., https://zawadi.app)"
+  echo "❌ Error: NEXT_PUBLIC_APP_URL not found"
   exit 1
 fi
 

@@ -17,7 +17,8 @@ export default async function DashboardPage({
   }
 
   const profile = await ensureProfile();
-  let lists = await getUserLists();
+  let lists = await getUserLists(false); // Only active lists
+  const archivedLists = await getUserLists(true); // All lists including archived
 
   // Create default list if none exist
   if (lists.length === 0) {
@@ -33,10 +34,14 @@ export default async function DashboardPage({
   const currentListId = params.list || lists.find((l) => l.isDefault)?.id || lists[0]?.id;
   const gifts = await getUserGifts(currentListId);
 
+  // Filter to get only archived lists
+  const onlyArchived = archivedLists.filter((l) => l.isArchived);
+
   return (
     <DashboardContent
       profile={profile}
       lists={lists}
+      archivedLists={onlyArchived}
       initialListId={currentListId}
       initialGifts={gifts}
     />
