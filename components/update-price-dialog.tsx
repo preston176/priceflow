@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingDown, Upload, Loader2 } from "lucide-react";
+import { TrendingDown, Upload, Loader2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,9 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift } from "@/db/schema";
-import { updateGiftPrice } from "@/actions/gift-actions";
-import { extractMetadataFromScreenshot } from "@/lib/price-scraper";
+import { updateGiftPrice, analyzeProductScreenshot } from "@/actions/gift-actions";
 import { useRouter } from "next/navigation";
+import { CaptureFromUrlDialog } from "./capture-from-url-dialog";
 
 interface UpdatePriceDialogProps {
   gift: Gift;
@@ -30,6 +30,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
   const [manualPrice, setManualPrice] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("manual");
+  const [showCaptureDialog, setShowCaptureDialog] = useState(false);
 
   const handleManualUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +60,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
       reader.onloadend = async () => {
         const base64 = reader.result as string;
 
-        const result = await extractMetadataFromScreenshot(base64);
+        const result = await analyzeProductScreenshot(base64);
 
         if (result.success && result.price) {
           await updateGiftPrice(gift.id, result.price);
@@ -86,6 +87,20 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
     }
   };
 
+  const handlePriceExtracted = async (price: number, name?: string) => {
+    setLoading(true);
+    try {
+      await updateGiftPrice(gift.id, price);
+      setOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to update price:", error);
+      alert(error instanceof Error ? error.message : "Failed to update price");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -103,8 +118,9 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="manual">Manual</TabsTrigger>
+            <TabsTrigger value="url">URL Capture</TabsTrigger>
             <TabsTrigger value="screenshot">Screenshot</TabsTrigger>
           </TabsList>
 
@@ -140,6 +156,38 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
                 )}
               </div>
             </form>
+          </TabsContent>
+
+          <TabsContent value="url" className="space-y-4">
+            <div className="space-y-4">
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <div className="flex items-start gap-2">
+                  <LinkIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">How it works:</p>
+                    <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                      <li>Paste the product URL</li>
+                      <li>The page loads in a preview</li>
+                      <li>Click "Capture" to take a screenshot</li>
+                      <li>AI automatically extracts the price</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setShowCaptureDialog(true)}
+                className="w-full"
+                size="lg"
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Open URL Capture Tool
+              </Button>
+
+              <p className="text-xs text-muted-foreground">
+                💡 Works best with product pages from Amazon, Walmart, Target, Best Buy, and most online stores
+              </p>
+            </div>
           </TabsContent>
 
           <TabsContent value="screenshot" className="space-y-4">
@@ -190,6 +238,12 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
           )}
         </div>
       </DialogContent>
+
+      <CaptureFromUrlDialog
+        open={showCaptureDialog}
+        onOpenChange={setShowCaptureDialog}
+        onPriceExtracted={handlePriceExtracted}
+      />
     </Dialog>
   );
 }

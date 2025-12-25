@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, Loader2, Sparkles, Camera } from "lucide-react";
+import { Plus, Loader2, Sparkles, Camera, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/image-upload";
 import { CropImageDialog } from "@/components/crop-image-dialog";
+import { CaptureFromUrlDialog } from "@/components/capture-from-url-dialog";
 import { addGift, fetchProductInfo, analyzeProductScreenshot } from "@/actions/gift-actions";
 import { List } from "@/db/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -33,11 +34,11 @@ interface AddGiftDialogProps {
 export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fetchingInfo, setFetchingInfo] = useState(false);
+  const [analyzingScreenshot, setAnalyzingScreenshot] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string>("");
+  const [showCaptureDialog, setShowCaptureDialog] = useState(false);
   const { toast } = useToast();
-  const urlTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -52,60 +53,13 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
     notes: "",
   });
 
-  // Auto-fetch product info when URL changes
-  useEffect(() => {
-    if (!formData.url || formData.url.length < 10) return;
-
-    // Clear previous timeout
-    if (urlTimeoutRef.current) {
-      clearTimeout(urlTimeoutRef.current);
-    }
-
-    // Debounce URL input
-    urlTimeoutRef.current = setTimeout(async () => {
-      try {
-        // Validate URL
-        new URL(formData.url);
-
-        setFetchingInfo(true);
-
-        const result = await fetchProductInfo(formData.url);
-
-        if (result.success) {
-          // Only auto-fill empty fields
-          setFormData(prev => ({
-            ...prev,
-            name: prev.name || result.name || prev.name,
-            imageUrl: prev.imageUrl || result.imageUrl || prev.imageUrl,
-            currentPrice: prev.currentPrice || (result.price ? result.price.toString() : prev.currentPrice),
-          }));
-
-          toast({
-            title: "Product info loaded! ✨",
-            description: `Found: ${result.name || "product"}${result.price ? ` - $${result.price}` : ""}`,
-          });
-        }
-      } catch (error) {
-        // Invalid URL or fetch failed - silently ignore
-        console.log("Could not fetch product info:", error);
-      } finally {
-        setFetchingInfo(false);
-      }
-    }, 1000); // Wait 1 second after user stops typing
-
-    return () => {
-      if (urlTimeoutRef.current) {
-        clearTimeout(urlTimeoutRef.current);
-      }
-    };
-  }, [formData.url, toast]);
 
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      setFetchingInfo(true);
+      setAnalyzingScreenshot(true);
 
       // Convert to base64
       const reader = new FileReader();
@@ -137,12 +91,12 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
         } else {
           toast({
             title: "Could not analyze screenshot",
-            description: result.error || "Try pasting the product URL instead",
+            description: result.error || "Please try another screenshot or enter details manually",
             variant: "destructive",
           });
         }
 
-        setFetchingInfo(false);
+        setAnalyzingScreenshot(false);
       };
 
       reader.readAsDataURL(file);
@@ -153,7 +107,7 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
         description: "Could not process screenshot",
         variant: "destructive",
       });
-      setFetchingInfo(false);
+      setAnalyzingScreenshot(false);
     }
   };
 
@@ -169,6 +123,22 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
       description: "Your product image is ready",
     });
   };
+
+  const handlePriceExtracted = (price: number, name?: string) => {
+    setFormData(prev => ({
+      ...prev,
+      currentPrice: price.toString(),
+      name: name || prev.name, // Update name if provided, otherwise keep existing
+    }));
+
+    toast({
+      title: "Product info extracted!",
+      description: name
+        ? `${name} - $${price.toFixed(2)}`
+        : `Current price set to $${price.toFixed(2)}`,
+    });
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,51 +177,41 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
           <DialogTitle>Add New Gift</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* AI Auto-fill Section - MOVED TO TOP */}
+          {/* AI Screenshot Analysis Section */}
           <div className="space-y-4 p-4 border-2 border-dashed border-primary/30 rounded-lg bg-primary/5">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span>AI Auto-fill (paste URL or upload screenshot)</span>
-              {fetchingInfo && (
+              <span>AI Auto-fill from Screenshot</span>
+              {analyzingScreenshot && (
                 <Loader2 className="h-4 w-4 animate-spin text-primary ml-auto" />
               )}
             </div>
 
-            {/* URL Input */}
-            <div className="space-y-2">
-              <Label htmlFor="url">Product URL</Label>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">Choose your preferred method:</p>
+
+              {/* Method 1: URL Capture with Mini Browser */}
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={() => setShowCaptureDialog(true)}
+              >
+                <ExternalLink className="h-5 w-5 mr-2" />
+                Paste URL & Extract with Mini Browser
+              </Button>
+
               <div className="relative">
-                <Input
-                  id="url"
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, url: e.target.value })
-                  }
-                  placeholder="https://amazon.com/product..."
-                  className={fetchingInfo ? "pr-10" : ""}
-                />
-                {fetchingInfo && (
-                  <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary animate-pulse" />
-                )}
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
               </div>
-            </div>
 
-            {/* OR Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-muted" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or
-                </span>
-              </div>
-            </div>
-
-            {/* Screenshot Upload */}
-            <div className="space-y-2">
-              <Label>Upload Screenshot</Label>
+              {/* Method 2: Screenshot Upload */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -262,16 +222,41 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 className="w-full"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={fetchingInfo}
+                disabled={analyzingScreenshot}
               >
-                <Camera className="h-4 w-4 mr-2" />
-                {fetchingInfo ? "Analyzing..." : "Upload Product Screenshot"}
+                <Camera className="h-5 w-5 mr-2" />
+                {analyzingScreenshot ? "Analyzing Screenshot..." : "Upload Product Screenshot"}
               </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                AI will extract product name and price from the image
-              </p>
+
+              <div className="bg-muted/50 p-3 rounded-md text-xs text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">How AI Auto-fill works:</p>
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-medium text-foreground">Method 1: Mini Browser</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Paste product URL</li>
+                      <li>Page loads in mini browser</li>
+                      <li>Click capture when loaded</li>
+                      <li>Browser may ask to share screen (select this window/tab)</li>
+                      <li>AI extracts price automatically</li>
+                    </ol>
+                    <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
+                      💡 For secure sites (Amazon, etc.), you'll be asked to share your screen - this is normal!
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Method 2: Screenshot</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Take screenshot of product page</li>
+                      <li>Upload it here</li>
+                      <li>AI extracts name, price, and image</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -398,7 +383,7 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
             </div>
           </div>
 
-          <Button type="submit" disabled={loading || fetchingInfo} className="w-full">
+          <Button type="submit" disabled={loading || analyzingScreenshot} className="w-full">
             {loading ? "Adding..." : "Add Gift"}
           </Button>
         </form>
@@ -410,6 +395,13 @@ export function AddGiftDialog({ lists, currentListId }: AddGiftDialogProps) {
         onOpenChange={setCropDialogOpen}
         imageSrc={imageToCrop}
         onCropComplete={handleCropComplete}
+      />
+
+      {/* URL Capture Dialog */}
+      <CaptureFromUrlDialog
+        open={showCaptureDialog}
+        onOpenChange={setShowCaptureDialog}
+        onPriceExtracted={handlePriceExtracted}
       />
     </Dialog>
   );
