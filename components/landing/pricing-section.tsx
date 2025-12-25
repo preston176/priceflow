@@ -20,7 +20,7 @@ const pricingTiers = [
     features: [
       "Unlimited wishlists",
       "Unlimited gifts",
-      "Manual price tracking",
+      "Automated price tracking & Alerts",
       "Share with family & friends",
       "Budget management",
       "Email sharing",
