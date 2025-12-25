@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 import { Gift } from "lucide-react";
 import Link from "next/link";
 import { ShareDialog } from "./share-dialog";
+import { ShareByEmailDialog } from "./share-by-email-dialog";
 import { ThemeToggle } from "./theme-toggle";
 import { CurrencySelector } from "./currency-selector";
 
@@ -24,7 +25,12 @@ export function Header({ listId, listName, currency = "USD" }: HeaderProps) {
         <div className="flex items-center gap-2">
           <CurrencySelector currentCurrency={currency} />
           <ThemeToggle />
-          <ShareDialog listId={listId} listName={listName} />
+          {listId && listName && (
+            <>
+              <ShareByEmailDialog listId={listId} listName={listName} />
+              <ShareDialog listId={listId} listName={listName} />
+            </>
+          )}
           <UserButton afterSignOutUrl="/sign-in" />
         </div>
       </div>

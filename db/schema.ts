@@ -81,6 +81,19 @@ export const shareTokens = pgTable("share_tokens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const listCollaborators = pgTable("list_collaborators", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  listId: uuid("list_id")
+    .notNull()
+    .references(() => lists.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  invitedBy: uuid("invited_by")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const profilesRelations = relations(profiles, ({ many }) => ({
   lists: many(lists),
   gifts: many(gifts),
@@ -121,6 +134,17 @@ export const shareTokensRelations = relations(shareTokens, ({ one }) => ({
   }),
 }));
 
+export const listCollaboratorsRelations = relations(listCollaborators, ({ one }) => ({
+  list: one(lists, {
+    fields: [listCollaborators.listId],
+    references: [lists.id],
+  }),
+  inviter: one(profiles, {
+    fields: [listCollaborators.invitedBy],
+    references: [profiles.id],
+  }),
+}));
+
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type List = typeof lists.$inferSelect;
@@ -131,3 +155,5 @@ export type ShareToken = typeof shareTokens.$inferSelect;
 export type NewShareToken = typeof shareTokens.$inferInsert;
 export type PriceHistory = typeof priceHistory.$inferSelect;
 export type NewPriceHistory = typeof priceHistory.$inferInsert;
+export type ListCollaborator = typeof listCollaborators.$inferSelect;
+export type NewListCollaborator = typeof listCollaborators.$inferInsert;
