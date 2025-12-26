@@ -31,9 +31,15 @@ PriceFlow solves the practical problem of fragmented shopping workflows by centr
 ![Dashboard](./docs/screenshots/dashboard.png)
 _Main dashboard with budget tracking and gift management_
 
-### AI-Powered Gift Entry
+### Product Scraping from URLs/Screenshots
 
-![AI Features](./docs/screenshots/ai-features.png)
+![AI Features](./docs/screenshots/product-scraper.png)
+_Either use URL input or upload a screenshot for AI-powered product metadata extraction_
+
+
+### Cross-Website Price Comparison (Realtime)
+
+![AI Features](./docs/screenshots/cross-website-price-tracker.png)
 _Screenshot upload with automatic product detection and image cropping_
 
 ### Price Tracking & Alerts
@@ -48,13 +54,16 @@ _Support for 20+ global currencies with auto-detection_
 
 ### Share Your Wishlist
 
-![Email Sharing](./docs/screenshots/sharing.png)
+![Email Sharing](./docs/screenshots/email-sharing.png)
 _Share lists via email or shareable links_
+
+![Sharing](./docs/screenshots/sharing.png)
+_Share lists via image or QR Code_
 
 ### Landing Page
 
 ![Landing Page](./docs/screenshots/landing-page.png)
-_Modern landing page with Winter Elegance theme and video demo section_
+_Modern landing page with video demo section_
 
 ---
 
@@ -79,7 +88,6 @@ _Modern landing page with Winter Elegance theme and video demo section_
 
 - **8 Seasonal Themes**: Christmas, New Year, Halloween, Valentine's, Spring, Summer, Fall, Winter
 - **Auto-Switching**: Themes change automatically based on current date
-- **Animated Effects**: Seasonal particles (snowflakes, hearts, leaves, etc.)
 - **Dark/Light Modes**: User-controlled theme preference that persists
 
 ### Sharing & Collaboration
