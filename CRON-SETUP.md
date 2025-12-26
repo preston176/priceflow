@@ -2,13 +2,17 @@
 
 ## Overview
 
-Zawadi now includes **fully automated price checking** using AI (Gemini Vision/Text) to analyze product pages in the background. No web scraping needed!
+Zawadi now includes **fully automated price checking** using AI (Gemini Vision/Text) to analyze product pages in the background, plus **automatic price updates** for gifts with auto-update enabled. Three cron jobs handle:
+
+1. **AI Price Checks** - Daily automated price verification
+2. **Auto-Update Enabled Gifts** - Background updates with email notifications
+3. **Weekly Reminders** - Summary emails for users
 
 ---
 
 ## ⚡ Quick Start
 
-### Using QStash (Recommended)
+### Using QStash (Recommended - 100% FREE)
 
 1. **Set up environment variables** in `.env`:
    ```bash
@@ -61,6 +65,29 @@ That's it! QStash will now run your cron jobs automatically.
 - Updates `lastPriceCheck` even on failures (avoid repeat checks)
 - Detailed logging for monitoring
 
+### Auto-Update Enabled Gifts Cron (`/api/cron/auto-update-enabled-gifts`)
+
+**What it does:**
+1. Runs daily (6 AM UTC recommended)
+2. Finds all gifts with `autoUpdateEnabled=true`
+3. Queues background price update jobs via QStash for each gift
+4. Staggers updates with 0-5 minute random delays to avoid overwhelming system
+5. Updates `lastAutoUpdate` timestamp for tracking
+6. Returns count of successful and failed updates
+
+**Smart Features:**
+- Uses QStash background workers for non-blocking updates
+- Staggered delays prevent API rate limiting
+- Two-email flow: start notification + completion with results
+- Scrapes existing marketplace URLs first, falls back to SerpAPI search
+- Updates all marketplace products for comprehensive price comparison
+
+**Requirements:**
+- `QSTASH_TOKEN` for background job scheduling
+- `CRON_SECRET` for endpoint authentication
+- `NEXT_PUBLIC_APP_URL` for worker callback URLs
+- Users must toggle "Auto: ON" in gift card UI
+
 ### Weekly Reminder Cron (`/api/cron/weekly-reminders`)
 
 **What it does:**
@@ -74,44 +101,7 @@ That's it! QStash will now run your cron jobs automatically.
 
 ## 📅 Cron Schedule Options
 
-### Option 1: Vercel Cron (Recommended for Vercel deployments)
-
-**File:** `vercel.json` (already created)
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/check-prices-ai",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-reminders",
-      "schedule": "0 9 * * 0"
-    }
-  ]
-}
-```
-
-**Setup:**
-1. Deploy to Vercel
-2. Crons run automatically
-3. Free on Pro plan (1,000 invocations/month)
-4. View logs in Vercel dashboard
-
-**Pros:**
-- Built into Vercel
-- No additional setup
-- Automatic retries
-- Logs integrated
-
-**Cons:**
-- Only works on Vercel
-- Requires Pro plan for production
-
----
-
-### Option 2: Upstash QStash (Recommended for all platforms)
+### Option 1: Upstash QStash (Recommended - FREE)
 
 **What is QStash?**
 - Serverless message queue and cron service by Upstash
@@ -156,6 +146,20 @@ curl -X POST https://qstash.upstash.io/v2/schedules \
   }'
 ```
 
+**Auto-Update Enabled Gifts (6 AM UTC):**
+```bash
+curl -X POST https://qstash.upstash.io/v2/schedules \
+  -H "Authorization: Bearer YOUR_QSTASH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "destination": "https://zawadi.app/api/cron/auto-update-enabled-gifts",
+    "cron": "0 6 * * *",
+    "headers": {
+      "Authorization": "Bearer YOUR_CRON_SECRET"
+    }
+  }'
+```
+
 **Weekly Reminders (Sunday 9 AM UTC):**
 ```bash
 curl -X POST https://qstash.upstash.io/v2/schedules \
@@ -189,6 +193,42 @@ curl -X POST https://qstash.upstash.io/v2/schedules \
 
 ---
 
+### Option 2: Vercel Cron (Requires Pro Plan - $20/month)
+
+**Note:** Vercel cron jobs require the **Pro plan** ($20/month). Not recommended unless you already have Pro.
+
+**File:** `vercel.json`
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-prices-ai",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/auto-update-enabled-gifts",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-reminders",
+      "schedule": "0 9 * * 0"
+    }
+  ]
+}
+```
+
+**Pros:**
+- Built into Vercel
+- No additional setup
+- Automatic retries
+
+**Cons:**
+- ❌ Requires $20/month Pro plan
+- Only works on Vercel
+
+---
+
 ### Option 3: GitHub Actions (Free alternative)
 
 **File:** `.github/workflows/price-check.yml`
@@ -199,6 +239,7 @@ name: Automated Price Checks
 on:
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
     - cron: '0 9 * * 0'  # Sunday at 9 AM UTC
 
 jobs:
@@ -209,6 +250,12 @@ jobs:
         if: github.event.schedule == '0 2 * * *'
         run: |
           curl -X GET "https://zawadi.app/api/cron/check-prices-ai" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+      - name: Auto-Update Enabled Gifts
+        if: github.event.schedule == '0 6 * * *'
+        run: |
+          curl -X GET "https://zawadi.app/api/cron/auto-update-enabled-gifts" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 
       - name: Weekly Reminders
@@ -241,9 +288,10 @@ jobs:
 
 **Setup:**
 1. Sign up at https://www.easycron.com/ or https://cron-job.org/
-2. Create two cron jobs:
-   - Daily: `https://zawadi.app/api/cron/check-prices-ai`
-   - Weekly: `https://zawadi.app/api/cron/weekly-reminders`
+2. Create three cron jobs:
+   - Daily at 2 AM: `https://zawadi.app/api/cron/check-prices-ai`
+   - Daily at 6 AM: `https://zawadi.app/api/cron/auto-update-enabled-gifts`
+   - Weekly Sunday 9 AM: `https://zawadi.app/api/cron/weekly-reminders`
 3. Add Authorization header: `Bearer YOUR_CRON_SECRET`
 4. Set schedules
 
@@ -337,12 +385,18 @@ CRON_SECRET=your_generated_secret_here
 curl -X GET "http://localhost:3000/api/cron/check-prices-ai" \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 
+# Test auto-update enabled gifts
+curl -X GET "http://localhost:3000/api/cron/auto-update-enabled-gifts" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+
 # Test weekly reminders
 curl -X GET "http://localhost:3000/api/cron/weekly-reminders" \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
-**Response format:**
+**Response formats:**
+
+*AI Price Check (`/api/cron/check-prices-ai`):*
 ```json
 {
   "success": true,
@@ -355,18 +409,38 @@ curl -X GET "http://localhost:3000/api/cron/weekly-reminders" \
 }
 ```
 
+*Auto-Update Enabled Gifts (`/api/cron/auto-update-enabled-gifts`):*
+```json
+{
+  "success": true,
+  "message": "Queued 25 auto-updates",
+  "giftsUpdated": 25,
+  "giftsFailed": 0,
+  "results": [
+    {
+      "giftId": "uuid",
+      "giftName": "Product Name",
+      "success": true,
+      "messageId": "qstash-message-id"
+    }
+  ]
+}
+```
+
 ### Logging
 
-Both cron endpoints log to console:
-- Each gift being checked
+All three cron endpoints log to console:
+- Each gift being processed
 - Successes and failures
 - Price drops detected
 - Email alerts sent
+- QStash job queueing status
 
 **View logs:**
-- **Vercel:** Dashboard > Logs
+- **Vercel:** Dashboard > Functions > Filter by endpoint path
 - **QStash:** Dashboard > Messages > History
 - **GitHub Actions:** Actions tab > Workflow runs
+- **Local:** Terminal output when running `bun run dev`
 
 ---
 
@@ -492,22 +566,23 @@ All emails sent from: `noreply@prestonmayieka.com`
 
 ## Summary
 
-You now have **fully automated price tracking** using AI!
+You now have **fully automated price tracking and updates** using AI!
 
-**Recommended Setup:**
-- Use **QStash** for cron scheduling
-- Daily price checks at 2 AM UTC
-- Weekly reminders on Sundays at 9 AM
-- Monitor costs and adjust batch sizes
-- Test thoroughly before production
+**Recommended Setup (100% FREE):**
+- Use **QStash** for cron scheduling (100 requests/day free)
+- Deploy on **Vercel Free tier** (or any free host)
+- **Daily AI price checks** at 2 AM UTC (passive tracking)
+- **Daily auto-updates** at 6 AM UTC (active user-enabled updates)
+- **Weekly reminders** on Sundays at 9 AM UTC
+- Total: 3 cron jobs = 3 requests/day = **$0/month**
 
 **Next Steps:**
-1. Choose your cron service
-2. Set up environment variables
-3. Configure schedules
-4. Test endpoints manually
-5. Monitor for 1 week
-6. Optimize based on usage
+1. Sign up for Upstash QStash (free tier)
+2. Set up environment variables (`QSTASH_TOKEN`, `CRON_SECRET`, etc.)
+3. Run the QStash schedule setup commands (see Option 1 above)
+4. Deploy to Vercel free tier
+5. Test endpoints manually with curl
+6. Monitor QStash dashboard for execution logs
 
 ---
 
