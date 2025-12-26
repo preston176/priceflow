@@ -335,6 +335,27 @@ export async function autoUpdatePrice(giftId: string) {
       throw new Error("QStash not configured");
     }
 
+    // Get user profile and gift details
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.clerkUserId, userId))
+      .limit(1);
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    const [gift] = await db
+      .select()
+      .from(gifts)
+      .where(eq(gifts.id, giftId))
+      .limit(1);
+
+    if (!gift) {
+      throw new Error("Gift not found");
+    }
+
     // Call QStash directly from server action
     const { Client } = await import("@upstash/qstash");
     const qstash = new Client({
@@ -349,11 +370,64 @@ export async function autoUpdatePrice(giftId: string) {
       },
     });
 
+    // Send initial email notification
+    if (profile.email) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      const emailHtml = `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">🚀 Price Update Started</h2>
+
+          <p>Hi ${profile.name || "there"},</p>
+
+          <p>We've started the automatic price update for:</p>
+
+          <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #1f2937;">${gift.name}</h3>
+            <p style="margin: 0; color: #6b7280;">Target Price: $${parseFloat(gift.targetPrice).toFixed(2)}</p>
+          </div>
+
+          <p>We're checking prices across multiple marketplaces:</p>
+          <ul style="color: #4b5563;">
+            <li>🔧 Scraping current product pages</li>
+            <li>🔍 Searching for best deals if needed</li>
+            <li>💰 Finding the lowest prices available</li>
+          </ul>
+
+          <p><strong>We'll email you when the update is complete with:</strong></p>
+          <ul style="color: #4b5563;">
+            <li>Updated prices from all marketplaces</li>
+            <li>Best deal recommendation</li>
+            <li>Detailed results breakdown</li>
+          </ul>
+
+          <p style="margin-top: 30px;">
+            <a href="${baseUrl}/dashboard"
+               style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              View Dashboard
+            </a>
+          </p>
+
+          <p style="color: #9ca3af; font-size: 14px; margin-top: 30px;">
+            This usually takes 1-2 minutes. Sit back and relax! ☕
+          </p>
+        </div>
+      `;
+
+      await resend.emails.send({
+        from: "GiftFlow <noreply@giftflow.app>",
+        to: profile.email,
+        subject: `Price Update Started: ${gift.name}`,
+        html: emailHtml,
+      });
+    }
+
     revalidatePath("/dashboard");
 
     return {
       success: true,
-      message: "Price update started in background. You'll receive an email when complete.",
+      message: "Price update started! Check your email for confirmation.",
       jobId: result.messageId,
     };
   } catch (error) {
