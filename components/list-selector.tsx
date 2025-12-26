@@ -209,7 +209,7 @@ export function ListSelector({
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
-                placeholder="e.g., Christmas 2024"
+                placeholder="e.g., Christmas 2026"
               />
             </div>
 
