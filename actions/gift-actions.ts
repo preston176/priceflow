@@ -311,3 +311,49 @@ export async function analyzeProductScreenshot(imageBase64: string) {
     };
   }
 }
+
+/**
+ * Trigger automatic background price update
+ * Uses QStash to run scraping + SerpAPI fallback in background
+ * Sends email when complete
+ */
+export async function autoUpdatePrice(giftId: string) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+    if (!baseUrl) {
+      throw new Error("App URL not configured");
+    }
+
+    const response = await fetch(`${baseUrl}/api/price-update-background`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ giftId }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to start background price update");
+    }
+
+    const data = await response.json();
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to start auto update",
+    };
+  }
+}

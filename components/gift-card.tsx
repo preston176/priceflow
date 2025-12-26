@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ExternalLink, Trash2, TrendingDown, TrendingUp, BarChart3, Bell, BellOff, Loader2, Store, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, Trash2, TrendingDown, TrendingUp, BarChart3, Bell, BellOff, Loader2, Store, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatCurrency, calculateSavings } from "@/lib/utils";
-import { togglePurchased, deleteGift } from "@/actions/gift-actions";
+import { togglePurchased, deleteGift, autoUpdatePrice } from "@/actions/gift-actions";
 import { togglePriceTracking, checkPriceNow } from "@/actions/price-actions";
 import { getMarketplaceProducts } from "@/actions/marketplace-actions";
 import { PriceHistoryChart } from "@/components/price-history-chart";
@@ -31,6 +31,7 @@ export function GiftCard({ gift }: GiftCardProps) {
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [showMarketplaces, setShowMarketplaces] = useState(false);
   const [isCheckingPrice, setIsCheckingPrice] = useState(false);
+  const [isAutoUpdating, setIsAutoUpdating] = useState(false);
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [loadingMarketplaces, setLoadingMarketplaces] = useState(false);
   const { toast } = useToast();
@@ -73,6 +74,35 @@ export function GiftCard({ gift }: GiftCardProps) {
       } catch (error) {
         console.error("Failed to delete gift:", error);
       }
+    }
+  };
+
+  const handleAutoUpdate = async () => {
+    setIsAutoUpdating(true);
+    try {
+      const result = await autoUpdatePrice(gift.id);
+
+      if (result.success) {
+        toast({
+          title: "Auto Update Started",
+          description: result.message || "You'll receive an email when the price update is complete.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to start auto update",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to start auto update:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start auto update",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAutoUpdating(false);
     }
   };
 
@@ -268,6 +298,25 @@ export function GiftCard({ gift }: GiftCardProps) {
       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
         <div className="flex gap-2 w-full">
           <UpdatePriceDialog gift={gift} />
+          <Button
+            onClick={handleAutoUpdate}
+            variant="default"
+            size="sm"
+            className="flex-1"
+            disabled={isAutoUpdating}
+          >
+            {isAutoUpdating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4 mr-1" />
+                Auto Update
+              </>
+            )}
+          </Button>
         </div>
         {gift.url && (
           <div className="flex gap-2 w-full">
