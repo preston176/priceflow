@@ -6,16 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: string | number, currencyCode?: string): string {
-  // Get currency from parameter, localStorage, or default to USD
-  let currency = currencyCode;
-
-  if (!currency && typeof window !== "undefined") {
-    currency = localStorage.getItem("preferred-currency") || "USD";
-  }
-
-  if (!currency) {
-    currency = "USD";
-  }
+  // Get currency from parameter or default to USD
+  // Note: Don't read from localStorage here as it causes hydration mismatches
+  // Components should handle currency preference via useState/useEffect
+  const currency = currencyCode || "USD";
 
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
 
