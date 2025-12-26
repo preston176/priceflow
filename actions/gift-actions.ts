@@ -313,6 +313,38 @@ export async function analyzeProductScreenshot(imageBase64: string) {
 }
 
 /**
+ * Toggle automatic price updates for a gift
+ * When enabled, gift will be auto-updated periodically
+ */
+export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await db
+      .update(gifts)
+      .set({
+        autoUpdateEnabled: enabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(gifts.id, giftId));
+
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      enabled,
+    };
+  } catch (error) {
+    console.error("Failed to toggle auto update:", error);
+    throw error;
+  }
+}
+
+/**
  * Trigger automatic background price update
  * Uses QStash to run scraping + SerpAPI fallback in background
  * Sends email when complete

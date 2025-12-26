@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatCurrency, calculateSavings } from "@/lib/utils";
-import { togglePurchased, deleteGift, autoUpdatePrice } from "@/actions/gift-actions";
+import { togglePurchased, deleteGift, autoUpdatePrice, toggleAutoUpdate } from "@/actions/gift-actions";
 import { togglePriceTracking, checkPriceNow } from "@/actions/price-actions";
 import { getMarketplaceProducts } from "@/actions/marketplace-actions";
 import { PriceHistoryChart } from "@/components/price-history-chart";
@@ -74,6 +74,28 @@ export function GiftCard({ gift }: GiftCardProps) {
       } catch (error) {
         console.error("Failed to delete gift:", error);
       }
+    }
+  };
+
+  const handleToggleAutoUpdate = async () => {
+    const newState = !gift.autoUpdateEnabled;
+
+    try {
+      await toggleAutoUpdate(gift.id, newState);
+
+      toast({
+        title: newState ? "Auto Update Enabled" : "Auto Update Disabled",
+        description: newState
+          ? "This gift will be automatically updated periodically"
+          : "Automatic updates have been turned off",
+      });
+    } catch (error) {
+      console.error("Failed to toggle auto update:", error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle auto update",
+        variant: "destructive",
+      });
     }
   };
 
@@ -299,24 +321,29 @@ export function GiftCard({ gift }: GiftCardProps) {
         <div className="flex gap-2 w-full">
           <UpdatePriceDialog gift={gift} />
           <Button
-            onClick={handleAutoUpdate}
-            variant="default"
+            onClick={handleToggleAutoUpdate}
+            variant={gift.autoUpdateEnabled ? "default" : "outline"}
             size="sm"
             className="flex-1"
-            disabled={isAutoUpdating}
           >
-            {isAutoUpdating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                Starting...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 mr-1" />
-                Auto Update
-              </>
-            )}
+            <Zap className="h-4 w-4 mr-1" />
+            {gift.autoUpdateEnabled ? "Auto: ON" : "Auto: OFF"}
           </Button>
+          {gift.autoUpdateEnabled && (
+            <Button
+              onClick={handleAutoUpdate}
+              variant="secondary"
+              size="sm"
+              disabled={isAutoUpdating}
+              title="Update now"
+            >
+              {isAutoUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
         {gift.url && (
           <div className="flex gap-2 w-full">

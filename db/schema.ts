@@ -53,8 +53,10 @@ export const gifts = pgTable("gifts", {
   priority: priorityEnum("priority").default("medium").notNull(),
   notes: text("notes"),
   priceTrackingEnabled: boolean("price_tracking_enabled").default(false).notNull(),
+  autoUpdateEnabled: boolean("auto_update_enabled").default(false).notNull(),
   priceAlertThreshold: decimal("price_alert_threshold", { precision: 10, scale: 2 }),
   lastPriceCheck: timestamp("last_price_check"),
+  lastAutoUpdate: timestamp("last_auto_update"),
   lowestPriceEver: decimal("lowest_price_ever", { precision: 10, scale: 2 }),
   highestPriceEver: decimal("highest_price_ever", { precision: 10, scale: 2 }),
   // Cross-marketplace fields
