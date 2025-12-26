@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Package, Archive as ArchiveIcon, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  AlertCircle,
+  Package,
+  Archive as ArchiveIcon,
+  ChevronDown,
+  ChevronUp,
+  TrendingDown,
+  ShoppingBag,
+  Target,
+  Sparkles
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
@@ -48,46 +58,39 @@ export function DashboardContent({
       router.refresh();
     } catch (error) {
       console.error("Failed to unarchive list:", error);
-      alert(error instanceof Error ? error.message : "Failed to unarchive list");
     } finally {
       setUnarchiving(null);
     }
   };
 
-  const currentList = lists.find((l) => l.id === currentListId);
-  const gifts = initialGifts;
+  const currentList = lists.find((l) => l.id === currentListId) || lists[0];
+  const gifts = currentList
+    ? initialGifts.filter((g) => g.listId === currentList.id)
+    : [];
 
   const totalSpent = gifts
-    .filter((gift) => gift.isPurchased)
-    .reduce((sum, gift) => sum + parseFloat(gift.targetPrice), 0);
+    .filter((g) => g.isPurchased)
+    .reduce((sum, g) => sum + parseFloat(g.currentPrice || g.targetPrice), 0);
 
-  const savingsAlerts = gifts.filter((gift) => {
-    if (!gift.currentPrice || gift.isPurchased) return false;
-    const target = parseFloat(gift.targetPrice);
-    const current = parseFloat(gift.currentPrice);
+  const savingsAlerts = gifts.filter((g) => {
+    if (!g.currentPrice || !g.priceTrackingEnabled) return false;
+    const current = parseFloat(g.currentPrice);
+    const target = parseFloat(g.targetPrice);
     return current < target;
   });
 
-  const totalPotentialSavings = savingsAlerts.reduce((sum, gift) => {
-    const target = parseFloat(gift.targetPrice);
-    const current = parseFloat(gift.currentPrice!);
+  const totalPotentialSavings = savingsAlerts.reduce((sum, g) => {
+    const current = parseFloat(g.currentPrice!);
+    const target = parseFloat(g.targetPrice);
     return sum + (target - current);
   }, 0);
 
-  const bestDeal = savingsAlerts.reduce<{ name: string; savings: number } | null>((best, gift) => {
-    const target = parseFloat(gift.targetPrice);
-    const current = parseFloat(gift.currentPrice!);
-    const savings = target - current;
-    if (!best || savings > best.savings) {
-      return { name: gift.name, savings };
-    }
-    return best;
-  }, null);
-
-  const giftsWithoutPrices = gifts.filter((g) => !g.isPurchased && !g.currentPrice).length;
+  const purchasedCount = gifts.filter((g) => g.isPurchased).length;
+  const totalGifts = gifts.length;
+  const purchaseProgress = totalGifts > 0 ? (purchasedCount / totalGifts) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Header
         listId={currentListId}
         listName={currentList?.name}
@@ -95,17 +98,27 @@ export function DashboardContent({
         userName={profile.name || undefined}
         gifts={gifts}
       />
-      <main className="container mx-auto px-4 py-8">
+
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">
-            Welcome back, {profile.name}
-          </h2>
-          <p className="text-muted-foreground">
-            Track your gift shopping and stay on budget
-          </p>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Welcome back, {profile.name}
+              </h1>
+              <p className="text-muted-foreground">
+                Track your gift shopping and stay on budget
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-6">
+        {/* List Selector */}
+        <div className="mb-8">
           <ListSelector
             lists={lists}
             currentListId={currentListId}
@@ -115,58 +128,84 @@ export function DashboardContent({
 
         {currentList ? (
           <>
-            <div className="grid gap-6 md:grid-cols-3 mb-8">
-              <BudgetProgress
-                totalBudget={currentList.budget || "0"}
-                totalSpent={totalSpent}
-              />
-              <Card>
+            {/* Stats Grid */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              {/* Budget Card */}
+              <div className="lg:col-span-2">
+                <BudgetProgress
+                  listId={currentList.id}
+                  totalBudget={currentList.budget || "0"}
+                  totalSpent={totalSpent}
+                  currency={profile.currency}
+                />
+              </div>
+
+              {/* Total Gifts Card */}
+              <Card className="group hover:shadow-lg transition-all duration-300 border-muted/40">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Gifts</p>
-                      <p className="text-3xl font-bold">{gifts.length}</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <Package className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {purchasedCount}/{totalGifts}
+                    </span>
                   </div>
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    {gifts.filter((g) => g.isPurchased).length} purchased
-                  </div>
+                  <h3 className="text-2xl font-bold mb-1">{totalGifts}</h3>
+                  <p className="text-sm text-muted-foreground">Total Gifts</p>
+                  {totalGifts > 0 && (
+                    <div className="mt-4">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
+                          style={{ width: `${purchaseProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-              <Card className={savingsAlerts.length > 0 ? "border-green-500/50 bg-green-500/10" : ""}>
+
+              {/* Savings Alert Card */}
+              <Card className={`group hover:shadow-lg transition-all duration-300 ${
+                savingsAlerts.length > 0
+                  ? "border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent"
+                  : "border-muted/40"
+              }`}>
                 <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
+                      savingsAlerts.length > 0
+                        ? "bg-green-500/10"
+                        : "bg-muted/50"
+                    }`}>
+                      <TrendingDown className={`h-6 w-6 ${
+                        savingsAlerts.length > 0
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-muted-foreground"
+                      }`} />
+                    </div>
+                    {savingsAlerts.length > 0 && (
+                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    )}
+                  </div>
                   {savingsAlerts.length > 0 ? (
                     <>
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertCircle className="h-5 w-5 text-green-500" />
-                        <p className="font-semibold text-green-500">Savings Unlocked!</p>
-                      </div>
-                      <p className="text-2xl font-bold text-green-600">
+                      <h3 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                         ${totalPotentialSavings.toFixed(2)}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Potential Savings
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
                         {savingsAlerts.length} item{savingsAlerts.length > 1 ? "s" : ""} below target
                       </p>
-                      {bestDeal && (
-                        <p className="text-xs text-green-600 mt-2">
-                          Best: {bestDeal.name} (${bestDeal.savings.toFixed(2)} off)
-                        </p>
-                      )}
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                        <p className="font-semibold">Price Tracking</p>
-                      </div>
+                      <h3 className="text-2xl font-bold mb-1">$0.00</h3>
                       <p className="text-sm text-muted-foreground">
-                        {giftsWithoutPrices > 0
-                          ? `${giftsWithoutPrices} item${giftsWithoutPrices > 1 ? "s" : ""} waiting for price check`
-                          : "All prices up to date"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Update prices to find the best deals
+                        No savings yet
                       </p>
                     </>
                   )}
@@ -174,100 +213,101 @@ export function DashboardContent({
               </Card>
             </div>
 
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-semibold">
-                {currentList.name}
-                {currentList.description && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    - {currentList.description}
-                  </span>
-                )}
-              </h3>
-              <AddGiftDialog lists={lists} currentListId={currentListId} />
-            </div>
-
-            {gifts.length === 0 ? (
-              <Card className="p-12">
-                <div className="text-center space-y-4">
-                  <Package className="h-16 w-16 mx-auto text-muted-foreground" />
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">No gifts yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Start adding gifts to this list
-                    </p>
-                    <AddGiftDialog lists={lists} currentListId={currentListId} />
-                  </div>
+            {/* Gifts Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Your Gifts</h2>
+                  <p className="text-muted-foreground text-sm">
+                    Manage and track your gift list
+                  </p>
                 </div>
-              </Card>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {gifts.map((gift) => (
-                  <GiftCard key={gift.id} gift={gift} />
+                <AddGiftDialog lists={lists} currentListId={currentList.id} />
+              </div>
+
+              {gifts.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {gifts.map((gift) => (
+                    <GiftCard key={gift.id} gift={gift} />
+                  ))}
+                </div>
+              ) : (
+                <Card className="border-dashed border-2">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                      <Package className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">No gifts yet</h3>
+                    <p className="text-muted-foreground mb-6 text-center max-w-sm">
+                      Start building your gift list by adding items you want to purchase
+                    </p>
+                    <AddGiftDialog lists={lists} currentListId={currentList.id} />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        ) : (
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <Target className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No lists found</h3>
+              <p className="text-muted-foreground text-center max-w-sm">
+                Create your first gift list to get started
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Archived Lists Section */}
+        {archivedLists.length > 0 && (
+          <div className="mt-12">
+            <Button
+              variant="ghost"
+              onClick={() => setShowArchived(!showArchived)}
+              className="mb-4 hover:bg-muted/50"
+            >
+              <ArchiveIcon className="h-4 w-4 mr-2" />
+              Archived Lists ({archivedLists.length})
+              {showArchived ? (
+                <ChevronUp className="h-4 w-4 ml-2" />
+              ) : (
+                <ChevronDown className="h-4 w-4 ml-2" />
+              )}
+            </Button>
+
+            {showArchived && (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {archivedLists.map((list) => (
+                  <Card key={list.id} className="border-muted/40">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold">{list.name}</h3>
+                          {list.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {list.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnarchive(list.id)}
+                        disabled={unarchiving === list.id}
+                        className="w-full mt-4"
+                      >
+                        {unarchiving === list.id ? "Unarchiving..." : "Unarchive"}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
-
-            {archivedLists.length > 0 && (
-              <div className="mt-12">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between mb-4"
-                  onClick={() => setShowArchived(!showArchived)}
-                >
-                  <div className="flex items-center gap-2">
-                    <ArchiveIcon className="h-5 w-5" />
-                    <span className="font-semibold">
-                      Archived Lists ({archivedLists.length})
-                    </span>
-                  </div>
-                  {showArchived ? (
-                    <ChevronUp className="h-5 w-5" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5" />
-                  )}
-                </Button>
-
-                {showArchived && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {archivedLists.map((list) => (
-                      <Card key={list.id} className="p-4">
-                        <div className="flex flex-col gap-3">
-                          <div>
-                            <h4 className="font-semibold">{list.name}</h4>
-                            {list.description && (
-                              <p className="text-sm text-muted-foreground">
-                                {list.description}
-                              </p>
-                            )}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUnarchive(list.id)}
-                            disabled={unarchiving === list.id}
-                          >
-                            {unarchiving === list.id ? "Unarchiving..." : "Unarchive"}
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        ) : (
-          <Card className="p-12">
-            <div className="text-center space-y-4">
-              <Package className="h-16 w-16 mx-auto text-muted-foreground" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">No lists yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first list to get started
-                </p>
-              </div>
-            </div>
-          </Card>
+          </div>
         )}
       </main>
     </div>
