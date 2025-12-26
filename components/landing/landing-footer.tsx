@@ -19,7 +19,7 @@ export function LandingFooter() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <GiftIcon className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">Zawadi</span>
+              <span className="text-xl font-bold">PriceFlow</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
               Make holiday shopping stress-free with smart budget tracking, price monitoring, and organized wishlists.
@@ -79,7 +79,7 @@ export function LandingFooter() {
         </div>
 
         <div className="pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Zawadi. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} PriceFlow. All rights reserved.</p>
         </div>
       </div>
     </footer>

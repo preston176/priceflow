@@ -22,7 +22,7 @@ export async function sendPriceAlertEmail(data: PriceAlertEmailData) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "Zawadi <noreply@noreply.prestonmayieka.com>",
+      from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
       to: data.to,
       subject: `Price Drop Alert: ${data.giftName} is now ${data.newPrice}!`,
       html: `
@@ -73,7 +73,7 @@ export async function sendPriceAlertEmail(data: PriceAlertEmailData) {
               }
 
               <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                This is an automated alert from your Zawadi wishlist. Prices are checked daily and you'll be notified when items drop below your target price.
+                This is an automated alert from your PriceFlow wishlist. Prices are checked daily and you'll be notified when items drop below your target price.
               </p>
 
               <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
@@ -124,7 +124,7 @@ export async function sendDailySummaryEmail(data: DailySummaryEmailData) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "Zawadi <noreply@noreply.prestonmayieka.com>",
+      from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
       to: data.to,
       subject: `Daily Summary: ${data.priceDrops.length} price drop${data.priceDrops.length > 1 ? "s" : ""} on your wishlist`,
       html: `
@@ -213,7 +213,7 @@ export async function sendWeeklyReminderEmail(data: WeeklyReminderEmailData) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "Zawadi <noreply@noreply.prestonmayieka.com>",
+      from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
       to: data.to,
       subject: `Weekly Reminder: ${data.itemsToCheck} items need price checks`,
       html: `
@@ -273,7 +273,7 @@ export async function sendWeeklyReminderEmail(data: WeeklyReminderEmailData) {
               </div>
 
               <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                This is a weekly reminder from Zawadi. Keeping your prices updated helps you find the best deals and save money.
+                This is a weekly reminder from PriceFlow. Keeping your prices updated helps you find the best deals and save money.
               </p>
 
               <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">

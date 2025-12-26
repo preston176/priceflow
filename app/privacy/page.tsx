@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <GiftIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Zawadi</h1>
+            <h1 className="text-2xl font-bold">PriceFlow</h1>
           </Link>
           <Button variant="ghost" asChild>
             <Link href="/">Back to Home</Link>
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Introduction</h2>
             <p className="text-muted-foreground">
-              At Zawadi, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our holiday gift tracking application.
+              At PriceFlow, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our holiday gift tracking application.
             </p>
           </section>
 

@@ -185,7 +185,7 @@ export function ShareAsImageDialog({
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <GiftIcon className="h-5 w-5 text-primary" />
-                <span className="text-lg font-bold">Zawadi</span>
+                <span className="text-lg font-bold">PriceFlow</span>
               </div>
             </div>
           </div>

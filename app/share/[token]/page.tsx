@@ -27,7 +27,7 @@ export default async function SharedWishlistPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Gift className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Zawadi</h1>
+            <h1 className="text-2xl font-bold">PriceFlow</h1>
           </Link>
           <Button asChild>
             <Link href="/sign-up">Create Your Own</Link>
@@ -98,7 +98,7 @@ export default async function SharedWishlistPage({
           <p>
             Powered by{" "}
             <Link href="/" className="hover:text-foreground underline">
-              Zawadi
+              PriceFlow
             </Link>
           </p>
         </div>

@@ -47,7 +47,7 @@ export function FeaturesSection() {
             Everything you need to master holiday shopping
           </h2>
           <p className="text-lg text-muted-foreground">
-            From budget tracking to price monitoring, Zawadi helps you make smarter gift decisions.
+            From budget tracking to price monitoring, PriceFlow helps you make smarter gift decisions.
           </p>
         </div>
 

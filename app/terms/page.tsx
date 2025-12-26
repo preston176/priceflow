@@ -9,7 +9,7 @@ export default function TermsPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <GiftIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Zawadi</h1>
+            <h1 className="text-2xl font-bold">PriceFlow</h1>
           </Link>
           <Button variant="ghost" asChild>
             <Link href="/">Back to Home</Link>
@@ -24,14 +24,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Acceptance of Terms</h2>
             <p className="text-muted-foreground">
-              By accessing and using Zawadi, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our service.
+              By accessing and using PriceFlow, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our service.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">Description of Service</h2>
             <p className="text-muted-foreground">
-              Zawadi is a holiday gift tracking application that helps users manage budgets, track prices, organize wishlists, and share gift lists with family and friends. We reserve the right to modify or discontinue the service at any time.
+              PriceFlow is a holiday gift tracking application that helps users manage budgets, track prices, organize wishlists, and share gift lists with family and friends. We reserve the right to modify or discontinue the service at any time.
             </p>
           </section>
 
@@ -51,7 +51,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">User Content</h2>
             <p className="text-muted-foreground">
-              You retain all rights to the content you create in Zawadi (gift lists, notes, etc.). By using our service, you grant us the right to store and process this content to provide our services. You are responsible for ensuring your content does not violate any laws or third-party rights.
+              You retain all rights to the content you create in PriceFlow (gift lists, notes, etc.). By using our service, you grant us the right to store and process this content to provide our services. You are responsible for ensuring your content does not violate any laws or third-party rights.
             </p>
           </section>
 
@@ -79,7 +79,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Limitation of Liability</h2>
             <p className="text-muted-foreground">
-              Zawadi is provided "as is" without any warranties. We are not liable for any indirect, incidental, special, or consequential damages arising from your use of the service.
+              PriceFlow is provided "as is" without any warranties. We are not liable for any indirect, incidental, special, or consequential damages arising from your use of the service.
             </p>
           </section>
 

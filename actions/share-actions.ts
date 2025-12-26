@@ -211,15 +211,15 @@ export async function shareListByEmail(listId: string, email: string) {
     const listDesc = list.description || "";
 
     await resend.emails.send({
-      from: "Zawadi <noreply@noreply.prestonmayieka.com>",
+      from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
       to: email,
-      subject: `${senderName} shared a gift list with you on Zawadi`,
+      subject: `${senderName} shared a gift list with you on PriceFlow`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">You've been invited to view a gift list!</h1>
           <p style="font-size: 16px; color: #666;">
             <strong>${senderName}</strong> has shared their gift list
-            "<strong>${listName}</strong>" with you on Zawadi.
+            "<strong>${listName}</strong>" with you on PriceFlow.
           </p>
           ${listDesc ? `<p style="font-size: 14px; color: #888;">${listDesc}</p>` : ""}
           <a href="${shareUrl}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">
@@ -231,7 +231,7 @@ export async function shareListByEmail(listId: string, email: string) {
           </p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;"/>
           <p style="font-size: 12px; color: #999;">
-            This invitation was sent from Zawadi. If you did not expect this email, you can safely ignore it.
+            This invitation was sent from PriceFlow. If you did not expect this email, you can safely ignore it.
           </p>
         </div>
       `,

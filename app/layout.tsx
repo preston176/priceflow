@@ -7,7 +7,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Zawadi - Smart Holiday Gift Tracker",
+  title: "PriceFlow - Smart Holiday Gift Tracker",
   description: "Your intelligent companion for stress-free holiday shopping. Track budgets, manage wishlists, and make gift-giving joyful again.",
 };
 

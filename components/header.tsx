@@ -30,7 +30,7 @@ export function Header({
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
           <GiftIcon className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Zawadi</h1>
+          <h1 className="text-2xl font-bold">PriceFlow</h1>
         </Link>
         <div className="flex items-center gap-2">
           <CurrencySelector currentCurrency={currency} />
