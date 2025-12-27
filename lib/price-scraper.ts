@@ -77,61 +77,11 @@ function extractAndValidateJSON<T>(
 }
 
 /**
- * Fetch URL through SerpAPI for better success rate
- * Requires SERPAPI_KEY environment variable
- */
-async function fetchWithSerpAPI(url: string): Promise<string | null> {
-  const serpApiKey = process.env.SERPAPI_KEY;
-
-  if (!serpApiKey) {
-    return null;
-  }
-
-  try {
-    // Use SerpAPI's general scraping endpoint
-    const apiUrl = `https://serpapi.com/search.json?engine=google&url=${encodeURIComponent(url)}&api_key=${serpApiKey}`;
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      console.error(`SerpAPI failed: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-
-    // SerpAPI returns the HTML in the 'html' field when using url parameter
-    if (data.html) {
-      return data.html;
-    }
-
-    console.error('SerpAPI: No HTML in response');
-    return null;
-  } catch (error) {
-    console.error('SerpAPI error:', error);
-    return null;
-  }
-}
-
-/**
- * Universal fetch function that tries SerpAPI first, then falls back to direct fetch
+ * Fetch page with proper headers
+ * Direct fetch with fallback to AI extraction
  */
 async function fetchPage(url: string): Promise<{ success: boolean; html?: string; error?: string }> {
-  // Try SerpAPI first if configured
-  if (process.env.SERPAPI_KEY) {
-    const html = await fetchWithSerpAPI(url);
-    if (html) {
-      return { success: true, html };
-    }
-    console.log('SerpAPI failed, falling back to direct fetch...');
-  }
-
-  // Fall back to direct fetch
+  // Direct fetch with user agent
   try {
     const response = await fetch(url, {
       headers: {
