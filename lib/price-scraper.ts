@@ -724,7 +724,7 @@ export async function extractMetadataFromScreenshot(
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `You are analyzing a screenshot of a product page. Extract product information.
+    const prompt = `You are analyzing a screenshot of a product search results page or product listing. Extract price information from the FIRST/TOP product shown.
 
 CRITICAL RULES - FOLLOW EXACTLY:
 1. Return ONLY a valid JSON object with this exact structure:
@@ -736,15 +736,24 @@ CRITICAL RULES - FOLLOW EXACTLY:
 2. Validation rules:
    - name: String containing the product name/title, or null if not visible
    - price: Number without currency symbol ($, €, etc.), or null if not visible
+   - Extract from the FIRST/TOP product in the search results
+   - Ignore sponsored products if there are regular results below them
 
-3. If you see both sale and original price, use the SALE PRICE (lower one)
-4. Do NOT include any text before or after the JSON
-5. Be precise - only extract what you clearly see in the screenshot
-6. If the screenshot is unclear or not a product page, return nulls
+3. Price extraction:
+   - If you see both sale and original price, use the SALE PRICE (lower one)
+   - Common price formats: $19.99, 19.99, $19 .99, etc.
+   - Look for price near the product image/title
+
+4. Multiple products:
+   - If this is a search results page with multiple products, pick the FIRST/TOP result
+   - Prioritize the most prominent product listing
+
+5. Do NOT include any text before or after the JSON
+6. Be precise - only extract what you clearly see in the screenshot
 
 EXAMPLES OF VALID RESPONSES:
 {"name": "Sony WH-1000XM5 Headphones", "price": 349.99}
-{"name": "Nike Air Max", "price": null}
+{"name": "WD Black SN7100 1TB", "price": 201.49}
 {"name": null, "price": 99.99}
 {"name": null, "price": null}
 

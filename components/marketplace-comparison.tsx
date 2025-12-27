@@ -142,14 +142,23 @@ export function MarketplaceComparison({
       const result = await syncMarketplacePrices(giftId);
 
       if (result.success) {
-        toast({
-          title: "Prices synced",
-          description: `Updated ${result.updated} marketplace${result.updated !== 1 ? 's' : ''}`,
-        });
-
-        if (result.errors.length > 0) {
+        // Show success with details about failures
+        if (result.updated > 0 && result.errors.length > 0) {
+          // Partial success
           toast({
-            title: "Some updates failed",
+            title: `${result.updated} of ${result.updated + result.errors.length} marketplace${result.updated + result.errors.length !== 1 ? 's' : ''} updated`,
+            description: `✓ Synced ${result.updated}, ✗ Failed ${result.errors.length}. ${result.errors.length > 0 ? `Failed: ${result.errors.join(", ")}` : ''}`,
+          });
+        } else if (result.updated > 0) {
+          // Full success
+          toast({
+            title: "All prices synced!",
+            description: `Successfully updated ${result.updated} marketplace${result.updated !== 1 ? 's' : ''}`,
+          });
+        } else {
+          // All failed
+          toast({
+            title: "Sync failed",
             description: result.errors.join(", "),
             variant: "destructive",
           });
