@@ -375,75 +375,136 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
         <!DOCTYPE html>
         <html>
           <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
-              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-              .feature { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #667eea; }
-              .feature-title { font-weight: 600; color: #667eea; margin-bottom: 5px; }
-              .cta { background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
-              .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-              .gift-name { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 18px; font-weight: 600; text-align: center; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                color: #1e293b;
+                background: #f8fafc;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+                color: white;
+                padding: 40px 30px;
+                border-radius: 12px 12px 0 0;
+                text-align: center;
+              }
+              .content {
+                background: white;
+                padding: 40px 30px;
+                border-radius: 0 0 12px 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              }
+              .feature {
+                background: #f1f5f9;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 10px;
+                border-left: 4px solid #0d9488;
+              }
+              .feature-title {
+                font-weight: 600;
+                color: #0d9488;
+                margin-bottom: 8px;
+                font-size: 16px;
+              }
+              .cta {
+                background: #0d9488;
+                color: white;
+                padding: 14px 28px;
+                text-decoration: none;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: 600;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 1px solid #e2e8f0;
+                color: #64748b;
+                font-size: 13px;
+              }
+              .gift-name {
+                background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+                padding: 20px;
+                border-radius: 10px;
+                margin: 25px 0;
+                font-size: 18px;
+                font-weight: 600;
+                text-align: center;
+                color: #0f766e;
+                border: 1px solid #99f6e4;
+              }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1 style="margin: 0;">⚡ Auto-Update Activated!</h1>
-                <p style="margin: 10px 0 0 0; opacity: 0.9;">Your price tracking just got smarter</p>
+                <h1 style="margin: 0; font-size: 28px;">⚡ Auto-Update Activated!</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">Your price tracking just got smarter</p>
               </div>
 
               <div class="content">
-                <p>Hey there! 👋</p>
+                <p style="font-size: 15px; color: #475569;">Hey there! 👋</p>
 
-                <p>You just activated <strong>Auto-Update</strong> for:</p>
+                <p style="font-size: 15px; color: #475569;">You just activated <strong>Auto-Update</strong> for:</p>
 
                 <div class="gift-name">
                   ${gift.name}
                 </div>
 
-                <p>Here's what happens next:</p>
+                <p style="font-size: 15px; color: #475569; margin-top: 25px;">Here's what happens next:</p>
 
                 <div class="feature">
                   <div class="feature-title">🤖 Daily Price Checks</div>
-                  <p style="margin: 5px 0 0 0;">Every day at 6 AM UTC, PriceFlow will automatically check prices across Amazon, Walmart, Target, and Best Buy.</p>
+                  <p style="margin: 5px 0 0 0; color: #475569;">Every day at 6 AM UTC, PriceFlow will automatically check prices across Amazon, Walmart, Target, and Best Buy.</p>
                 </div>
 
                 <div class="feature">
-                  <div class="feature-title">📧 Two Email Updates</div>
-                  <p style="margin: 5px 0 0 0;">When an update starts, you'll get a quick "Started" email. When it's done (1-2 minutes later), you'll get a detailed report with all the new prices.</p>
+                  <div class="feature-title">📧 Email Updates</div>
+                  <p style="margin: 5px 0 0 0; color: #475569;">When an update starts, you'll get a quick "Started" email. When it's done (1-2 minutes later), you'll get a detailed report with all the new prices.</p>
                 </div>
 
                 <div class="feature">
                   <div class="feature-title">💰 Best Price Alerts</div>
-                  <p style="margin: 5px 0 0 0;">If we find a price below your target ($${gift.targetPrice}), we'll let you know immediately!</p>
+                  <p style="margin: 5px 0 0 0; color: #475569;">If we find a price below your target ($${gift.targetPrice}), we'll let you know immediately!</p>
                 </div>
 
                 <div class="feature">
                   <div class="feature-title">🔄 Smart Background Updates</div>
-                  <p style="margin: 5px 0 0 0;">All updates happen in the background. You don't need to do anything - just check your email for deals!</p>
+                  <p style="margin: 5px 0 0 0; color: #475569;">All updates happen in the background. You don't need to do anything - just check your email for deals!</p>
                 </div>
 
-                <h3 style="margin-top: 30px;">What to Expect</h3>
-                <ul style="line-height: 1.8;">
+                <h3 style="margin-top: 35px; color: #0f766e; font-size: 18px;">What to Expect</h3>
+                <ul style="line-height: 1.8; color: #475569;">
                   <li><strong>Tomorrow at 6 AM UTC:</strong> Your first auto-update will run</li>
                   <li><strong>Daily:</strong> Same time every day, automatic checks</li>
                   <li><strong>No action needed:</strong> Sit back and let PriceFlow find deals for you</li>
                 </ul>
 
-                <h3>Need to Turn It Off?</h3>
-                <p>No problem! Just head back to your dashboard and click the "Auto: ON" button to toggle it off anytime.</p>
+                <h3 style="margin-top: 30px; color: #0f766e; font-size: 18px;">Need to Turn It Off?</h3>
+                <p style="color: #475569;">No problem! Just head back to your dashboard and click the "Auto: ON" button to toggle it off anytime.</p>
 
-                <div style="text-align: center;">
+                <div style="text-align: center; margin-top: 35px;">
                   <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta">View Dashboard</a>
                 </div>
 
                 <div class="footer">
-                  <p><strong>PriceFlow</strong> - Smart price tracking, zero effort</p>
-                  <p style="font-size: 12px; margin-top: 15px;">
+                  <p style="margin: 0;"><strong>PriceFlow</strong> - Smart price tracking, zero effort</p>
+                  <p style="margin: 15px 0 0 0; font-size: 12px;">
                     You're receiving this because you activated auto-update for ${gift.name}.<br>
-                    Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard">dashboard</a>.
+                    Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color: #0d9488; text-decoration: none;">dashboard</a>.
                   </p>
                 </div>
               </div>
@@ -477,61 +538,117 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
         <!DOCTYPE html>
         <html>
           <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
-              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-              .info-box { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #6b7280; }
-              .cta { background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
-              .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-              .gift-name { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 18px; font-weight: 600; text-align: center; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                color: #1e293b;
+                background: #f8fafc;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+                color: white;
+                padding: 40px 30px;
+                border-radius: 12px 12px 0 0;
+                text-align: center;
+              }
+              .content {
+                background: white;
+                padding: 40px 30px;
+                border-radius: 0 0 12px 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              }
+              .info-box {
+                background: #f1f5f9;
+                padding: 25px;
+                margin: 25px 0;
+                border-radius: 10px;
+                border-left: 4px solid #64748b;
+              }
+              .cta {
+                background: #0d9488;
+                color: white;
+                padding: 14px 28px;
+                text-decoration: none;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: 600;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 1px solid #e2e8f0;
+                color: #64748b;
+                font-size: 13px;
+              }
+              .gift-name {
+                background: #f1f5f9;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 25px 0;
+                font-size: 18px;
+                font-weight: 600;
+                text-align: center;
+                color: #334155;
+                border: 1px solid #cbd5e1;
+              }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1 style="margin: 0;">⏸️ Auto-Update Paused</h1>
-                <p style="margin: 10px 0 0 0; opacity: 0.9;">You're back in manual control</p>
+                <h1 style="margin: 0; font-size: 28px;">⏸️ Auto-Update Paused</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">You're back in manual control</p>
               </div>
 
               <div class="content">
-                <p>Hey there! 👋</p>
+                <p style="font-size: 15px; color: #475569;">Hey there! 👋</p>
 
-                <p>You've turned off <strong>Auto-Update</strong> for:</p>
+                <p style="font-size: 15px; color: #475569;">You've turned off <strong>Auto-Update</strong> for:</p>
 
                 <div class="gift-name">
                   ${gift.name}
                 </div>
 
                 <div class="info-box">
-                  <h3 style="margin: 0 0 10px 0; color: #4b5563;">What This Means</h3>
-                  <ul style="color: #6b7280; line-height: 1.8; margin: 10px 0;">
+                  <h3 style="margin: 0 0 15px 0; color: #334155; font-size: 17px;">What This Means</h3>
+                  <ul style="color: #475569; line-height: 1.8; margin: 10px 0;">
                     <li><strong>No more daily checks:</strong> We won't automatically check prices for this item</li>
                     <li><strong>No price alerts:</strong> You won't receive emails when prices change</li>
                     <li><strong>Manual updates only:</strong> You can still manually update prices anytime</li>
                   </ul>
                 </div>
 
-                <h3>Want to Track Prices Again?</h3>
-                <p>No problem! You can turn Auto-Update back on anytime from your dashboard. Just click the "Auto: OFF" button to re-enable automatic price tracking.</p>
+                <h3 style="margin-top: 30px; color: #0f766e; font-size: 18px;">Want to Track Prices Again?</h3>
+                <p style="color: #475569;">No problem! You can turn Auto-Update back on anytime from your dashboard. Just click the "Auto: OFF" button to re-enable automatic price tracking.</p>
 
-                <h3 style="margin-top: 30px;">Other Ways to Track Prices:</h3>
-                <ul style="color: #4b5563; line-height: 1.8;">
+                <h3 style="margin-top: 30px; color: #0f766e; font-size: 18px;">Other Ways to Track Prices:</h3>
+                <ul style="color: #475569; line-height: 1.8;">
                   <li><strong>Manual Sync:</strong> Click "Sync Prices" in the marketplace section</li>
                   <li><strong>Update Price:</strong> Use the "Update Price" button to manually enter new prices</li>
                   <li><strong>Price History:</strong> View historical price trends anytime</li>
                 </ul>
 
-                <div style="text-align: center;">
+                <div style="text-align: center; margin-top: 35px;">
                   <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="cta">Go to Dashboard</a>
                 </div>
 
                 <div class="footer">
-                  <p><strong>PriceFlow</strong> - Your prices, your way</p>
-                  <p style="font-size: 12px; margin-top: 15px;">
+                  <p style="margin: 0;"><strong>PriceFlow</strong> - Your prices, your way</p>
+                  <p style="margin: 15px 0 0 0; font-size: 12px;">
                     You're receiving this because you paused auto-update for ${gift.name}.<br>
-                    Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard">dashboard</a>.
+                    Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color: #0d9488; text-decoration: none;">dashboard</a>.
                   </p>
                 </div>
               </div>
@@ -632,43 +749,114 @@ export async function autoUpdatePrice(giftId: string) {
     // Send initial email notification
     if (profile.email) {
       const emailHtml = `
-        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">🚀 Price Update Started</h2>
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                color: #1e293b;
+                background: #f8fafc;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+                color: white;
+                padding: 40px 30px;
+                border-radius: 12px 12px 0 0;
+                text-align: center;
+              }
+              .content {
+                background: white;
+                padding: 40px 30px;
+                border-radius: 0 0 12px 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              }
+              .gift-box {
+                background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+                padding: 25px;
+                border-radius: 10px;
+                margin: 25px 0;
+                border: 1px solid #99f6e4;
+              }
+              .cta {
+                background: #0d9488;
+                color: white;
+                padding: 14px 28px;
+                text-decoration: none;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: 600;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 1px solid #e2e8f0;
+                color: #64748b;
+                font-size: 13px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1 style="margin: 0; font-size: 28px;">🚀 Price Update Started</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">Checking prices across marketplaces</p>
+              </div>
 
-          <p>Hi ${profile.name || "there"},</p>
+              <div class="content">
+                <p style="font-size: 15px; color: #475569;">Hi ${profile.name || "there"},</p>
 
-          <p>We've started the automatic price update for:</p>
+                <p style="font-size: 15px; color: #475569;">We've started the automatic price update for:</p>
 
-          <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #1f2937;">${gift.name}</h3>
-            <p style="margin: 0; color: #6b7280;">Target Price: $${parseFloat(gift.targetPrice).toFixed(2)}</p>
-          </div>
+                <div class="gift-box">
+                  <h3 style="margin: 0 0 10px 0; color: #0f766e; font-size: 18px;">${gift.name}</h3>
+                  <p style="margin: 0; color: #0891b2; font-weight: 600;">Target Price: $${parseFloat(gift.targetPrice).toFixed(2)}</p>
+                </div>
 
-          <p>We're checking prices across multiple marketplaces:</p>
-          <ul style="color: #4b5563;">
-            <li>🔧 Scraping current product pages</li>
-            <li>🔍 Searching for best deals if needed</li>
-            <li>💰 Finding the lowest prices available</li>
-          </ul>
+                <h3 style="color: #0f766e; font-size: 17px; margin-top: 30px;">We're checking prices across multiple marketplaces:</h3>
+                <ul style="color: #475569; line-height: 1.8;">
+                  <li>🛒 Amazon</li>
+                  <li>🛒 Walmart</li>
+                  <li>🛒 Target</li>
+                  <li>🛒 Best Buy</li>
+                </ul>
 
-          <p><strong>We'll email you when the update is complete with:</strong></p>
-          <ul style="color: #4b5563;">
-            <li>Updated prices from all marketplaces</li>
-            <li>Best deal recommendation</li>
-            <li>Detailed results breakdown</li>
-          </ul>
+                <h3 style="color: #0f766e; font-size: 17px; margin-top: 30px;">You'll receive a completion email with:</h3>
+                <ul style="color: #475569; line-height: 1.8;">
+                  <li>✓ Updated prices from all marketplaces</li>
+                  <li>✓ Best deal recommendation</li>
+                  <li>✓ Detailed results breakdown</li>
+                </ul>
 
-          <p style="margin-top: 30px;">
-            <a href="${baseUrl}/dashboard"
-               style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              View Dashboard
-            </a>
-          </p>
+                <div style="text-align: center; margin-top: 35px;">
+                  <a href="${baseUrl}/dashboard" class="cta">View Dashboard</a>
+                </div>
 
-          <p style="color: #9ca3af; font-size: 14px; margin-top: 30px;">
-            This usually takes 1-2 minutes. Sit back and relax! ☕
-          </p>
-        </div>
+                <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 15px; margin-top: 30px; text-align: center;">
+                  <p style="margin: 0; color: #0f766e; font-size: 14px;">
+                    ⏱️ This usually takes 1-2 minutes. Sit back and relax!
+                  </p>
+                </div>
+
+                <div class="footer">
+                  <p style="margin: 0;"><strong>PriceFlow</strong> - Smart price tracking, zero effort</p>
+                </div>
+              </div>
+            </div>
+          </body>
+        </html>
       `;
 
       await resend.emails.send({
