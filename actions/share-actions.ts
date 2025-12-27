@@ -215,25 +215,109 @@ export async function shareListByEmail(listId: string, email: string) {
       to: email,
       subject: `${senderName} shared a gift list with you on PriceFlow`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">You've been invited to view a gift list!</h1>
-          <p style="font-size: 16px; color: #666;">
-            <strong>${senderName}</strong> has shared their gift list
-            "<strong>${listName}</strong>" with you on PriceFlow.
-          </p>
-          ${listDesc ? `<p style="font-size: 14px; color: #888;">${listDesc}</p>` : ""}
-          <a href="${shareUrl}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">
-            View Gift List
-          </a>
-          <p style="font-size: 14px; color: #888; margin-top: 20px;">
-            Or copy and paste this link into your browser:<br/>
-            <code style="background: #f4f4f4; padding: 4px 8px; border-radius: 3px;">${shareUrl}</code>
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;"/>
-          <p style="font-size: 12px; color: #999;">
-            This invitation was sent from PriceFlow. If you did not expect this email, you can safely ignore it.
-          </p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                color: #1e293b;
+                background: #f8fafc;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header {
+                background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+                color: white;
+                padding: 40px 30px;
+                border-radius: 12px 12px 0 0;
+                text-align: center;
+              }
+              .content {
+                background: white;
+                padding: 40px 30px;
+                border-radius: 0 0 12px 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              }
+              .list-box {
+                background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+                padding: 25px;
+                border-radius: 10px;
+                margin: 25px 0;
+                border: 1px solid #99f6e4;
+              }
+              .cta {
+                background: #0d9488;
+                color: white;
+                padding: 14px 28px;
+                text-decoration: none;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: 600;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 40px;
+                padding-top: 30px;
+                border-top: 1px solid #e2e8f0;
+                color: #64748b;
+                font-size: 13px;
+              }
+              .link-box {
+                background: #f1f5f9;
+                padding: 15px;
+                border-radius: 8px;
+                margin: 20px 0;
+                text-align: center;
+                word-break: break-all;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1 style="margin: 0; font-size: 28px;">🎁 You've Been Invited!</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">Someone shared a gift list with you</p>
+              </div>
+
+              <div class="content">
+                <p style="font-size: 15px; color: #475569;">
+                  <strong>${senderName}</strong> has shared their gift list with you on PriceFlow.
+                </p>
+
+                <div class="list-box">
+                  <h2 style="margin: 0 0 10px 0; color: #0f766e; font-size: 22px;">${listName}</h2>
+                  ${listDesc ? `<p style="margin: 0; color: #0891b2; font-size: 14px;">${listDesc}</p>` : ""}
+                </div>
+
+                <div style="text-align: center; margin: 35px 0;">
+                  <a href="${shareUrl}" class="cta">View Gift List</a>
+                </div>
+
+                <div class="link-box">
+                  <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b;">Or copy and paste this link:</p>
+                  <code style="font-size: 13px; color: #0f766e;">${shareUrl}</code>
+                </div>
+
+                <div class="footer">
+                  <p style="margin: 0;"><strong>PriceFlow</strong> - Smart price tracking, zero effort</p>
+                  <p style="margin: 15px 0 0 0; font-size: 12px;">
+                    This invitation was sent from PriceFlow. If you didn't expect this email, you can safely ignore it.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </body>
+        </html>
       `,
     });
 
