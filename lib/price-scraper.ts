@@ -643,31 +643,12 @@ async function takeScreenshot(url: string): Promise<string | null> {
       return null;
     }
 
-    const data = await response.json();
-    console.log('Screenshot API response:', data);
+    // Screenshot API returns raw PNG image data, not JSON
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    console.log(`Screenshot captured successfully, base64 length: ${base64.length}`);
 
-    // Screenshot API returns a URL to the image
-    if (data.screenshot) {
-      const imageUrl = data.screenshot;
-      console.log(`Fetching screenshot from: ${imageUrl}`);
-
-      // Fetch the image and convert to base64
-      const imageResponse = await fetch(imageUrl);
-
-      if (!imageResponse.ok) {
-        console.error(`Failed to fetch screenshot image: ${imageResponse.status}`);
-        return null;
-      }
-
-      const arrayBuffer = await imageResponse.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
-      console.log(`Screenshot captured successfully, base64 length: ${base64.length}`);
-
-      return base64;
-    }
-
-    console.error('Screenshot API: No screenshot in response', data);
-    return null;
+    return base64;
   } catch (error) {
     console.error('Screenshot API error:', error);
     return null;
