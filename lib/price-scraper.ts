@@ -77,14 +77,56 @@ function extractAndValidateJSON<T>(
 }
 
 /**
- * Extract price from Amazon product page
+ * Fetch URL through ScraperAPI for better success rate
+ * Requires SCRAPER_API_KEY environment variable
  */
-async function scrapeAmazon(url: string): Promise<PriceResult> {
+async function fetchWithScraperAPI(url: string): Promise<string | null> {
+  const scraperApiKey = process.env.SCRAPER_API_KEY;
+
+  if (!scraperApiKey) {
+    return null;
+  }
+
+  try {
+    const apiUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`ScraperAPI failed: ${response.status}`);
+      return null;
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error('ScraperAPI error:', error);
+    return null;
+  }
+}
+
+/**
+ * Universal fetch function that tries ScraperAPI first, then falls back to direct fetch
+ */
+async function fetchPage(url: string): Promise<{ success: boolean; html?: string; error?: string }> {
+  // Try ScraperAPI first if configured
+  if (process.env.SCRAPER_API_KEY) {
+    const html = await fetchWithScraperAPI(url);
+    if (html) {
+      return { success: true, html };
+    }
+    console.log('ScraperAPI failed, falling back to direct fetch...');
+  }
+
+  // Fall back to direct fetch
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       },
     });
 
@@ -93,6 +135,27 @@ async function scrapeAmazon(url: string): Promise<PriceResult> {
     }
 
     const html = await response.text();
+    return { success: true, html };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Extract price from Amazon product page
+ */
+async function scrapeAmazon(url: string): Promise<PriceResult> {
+  try {
+    const result = await fetchPage(url);
+
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
+    }
+
+    const html = result.html;
 
     // Try multiple selectors Amazon uses for prices
     const pricePatterns = [
@@ -130,18 +193,13 @@ async function scrapeAmazon(url: string): Promise<PriceResult> {
  */
 async function scrapeWalmart(url: string): Promise<PriceResult> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
 
     const pricePatterns = [
       /"currentPrice":\s*"([0-9.]+)"/,
@@ -178,18 +236,13 @@ async function scrapeWalmart(url: string): Promise<PriceResult> {
  */
 async function scrapeTarget(url: string): Promise<PriceResult> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
 
     const pricePatterns = [
       /"current_retail":\s*"([0-9.]+)"/,
@@ -226,18 +279,13 @@ async function scrapeTarget(url: string): Promise<PriceResult> {
  */
 async function scrapeBestBuy(url: string): Promise<PriceResult> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
 
     const pricePatterns = [
       /"salePrice":\s*([0-9.]+)/,
@@ -320,18 +368,13 @@ export async function scrapePrice(url: string): Promise<PriceResult> {
  */
 async function scrapeGeneric(url: string): Promise<PriceResult> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
 
     // Try common price patterns
     const pricePatterns = [
@@ -429,18 +472,13 @@ export async function extractProductMetadata(url: string): Promise<{
     }
 
     // Fetch the page
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
 
     // Extract metadata using meta tags and common patterns first (fast)
     let productName = "";
@@ -769,18 +807,13 @@ async function scrapePriceWithAI(url: string): Promise<PriceResult> {
     }
 
     // Fetch the page
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      },
-    });
+    const result = await fetchPage(url);
 
-    if (!response.ok) {
-      return { success: false, error: "Failed to fetch page" };
+    if (!result.success || !result.html) {
+      return { success: false, error: result.error || "Failed to fetch page" };
     }
 
-    const html = await response.text();
+    const html = result.html;
     const cleanedHtml = cleanHtmlForLLM(html);
 
     // Initialize Gemini

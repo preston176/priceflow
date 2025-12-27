@@ -234,9 +234,16 @@ export async function syncMarketplacePrices(giftId: string) {
     const errors: string[] = [];
     let updated = 0;
 
-    // Check prices for all marketplace products
-    for (const mp of gift.marketplaceProducts) {
+    // Check prices for all marketplace products with delays
+    for (let i = 0; i < gift.marketplaceProducts.length; i++) {
+      const mp = gift.marketplaceProducts[i];
+
       try {
+        // Add 2-second delay between requests to avoid rate limiting
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
         const result = await scrapePrice(mp.productUrl);
 
         if (result.success && result.price) {
