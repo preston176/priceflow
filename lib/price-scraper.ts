@@ -77,49 +77,58 @@ function extractAndValidateJSON<T>(
 }
 
 /**
- * Fetch URL through ScraperAPI for better success rate
- * Requires SCRAPER_API_KEY environment variable
+ * Fetch URL through SerpAPI for better success rate
+ * Requires SERPAPI_KEY environment variable
  */
-async function fetchWithScraperAPI(url: string): Promise<string | null> {
-  const scraperApiKey = process.env.SCRAPER_API_KEY;
+async function fetchWithSerpAPI(url: string): Promise<string | null> {
+  const serpApiKey = process.env.SERPAPI_KEY;
 
-  if (!scraperApiKey) {
+  if (!serpApiKey) {
     return null;
   }
 
   try {
-    const apiUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true`;
+    // Use SerpAPI's general scraping endpoint
+    const apiUrl = `https://serpapi.com/search.json?engine=google&url=${encodeURIComponent(url)}&api_key=${serpApiKey}`;
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'text/html',
+        'Accept': 'application/json',
       },
     });
 
     if (!response.ok) {
-      console.error(`ScraperAPI failed: ${response.status}`);
+      console.error(`SerpAPI failed: ${response.status}`);
       return null;
     }
 
-    return await response.text();
+    const data = await response.json();
+
+    // SerpAPI returns the HTML in the 'html' field when using url parameter
+    if (data.html) {
+      return data.html;
+    }
+
+    console.error('SerpAPI: No HTML in response');
+    return null;
   } catch (error) {
-    console.error('ScraperAPI error:', error);
+    console.error('SerpAPI error:', error);
     return null;
   }
 }
 
 /**
- * Universal fetch function that tries ScraperAPI first, then falls back to direct fetch
+ * Universal fetch function that tries SerpAPI first, then falls back to direct fetch
  */
 async function fetchPage(url: string): Promise<{ success: boolean; html?: string; error?: string }> {
-  // Try ScraperAPI first if configured
-  if (process.env.SCRAPER_API_KEY) {
-    const html = await fetchWithScraperAPI(url);
+  // Try SerpAPI first if configured
+  if (process.env.SERPAPI_KEY) {
+    const html = await fetchWithSerpAPI(url);
     if (html) {
       return { success: true, html };
     }
-    console.log('ScraperAPI failed, falling back to direct fetch...');
+    console.log('SerpAPI failed, falling back to direct fetch...');
   }
 
   // Fall back to direct fetch
