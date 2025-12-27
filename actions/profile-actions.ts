@@ -7,34 +7,51 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function ensureProfile() {
-  const { userId } = await auth();
-  const user = await currentUser();
+  try {
+    const { userId } = await auth();
+    const user = await currentUser();
 
-  if (!userId || !user) {
-    throw new Error("Unauthorized");
+    if (!userId || !user) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check for existing profile
+    const [existingProfile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.clerkUserId, userId))
+      .limit(1);
+
+    if (existingProfile) {
+      return existingProfile;
+    }
+
+    // Get email from primary email address
+    const primaryEmail = user.emailAddresses.find(
+      (email) => email.id === user.primaryEmailAddressId
+    )?.emailAddress || user.emailAddresses[0]?.emailAddress;
+
+    if (!primaryEmail) {
+      console.error("No email address found for user:", userId);
+      throw new Error("No email address found");
+    }
+
+    // Create new profile
+    const [newProfile] = await db
+      .insert(profiles)
+      .values({
+        clerkUserId: userId,
+        email: primaryEmail,
+        name: user.fullName || user.firstName || user.username || "User",
+        imageUrl: user.imageUrl || null,
+      })
+      .returning();
+
+    return newProfile;
+  } catch (error) {
+    console.error("Error in ensureProfile:", error);
+    throw error;
   }
-
-  const [existingProfile] = await db
-    .select()
-    .from(profiles)
-    .where(eq(profiles.clerkUserId, userId))
-    .limit(1);
-
-  if (existingProfile) {
-    return existingProfile;
-  }
-
-  const [newProfile] = await db
-    .insert(profiles)
-    .values({
-      clerkUserId: userId,
-      email: user.emailAddresses[0]?.emailAddress || "",
-      name: user.fullName || user.firstName || "User",
-      imageUrl: user.imageUrl,
-    })
-    .returning();
-
-  return newProfile;
 }
 
 export async function updateBudget(listId: string, budget: string) {
