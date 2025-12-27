@@ -816,13 +816,13 @@ async function scrapePriceWithAI(url: string): Promise<PriceResult> {
     }
 
     // Fetch the page
-    const result = await fetchPage(url);
+    const fetchResult = await fetchPage(url);
 
-    if (!result.success || !result.html) {
-      return { success: false, error: result.error || "Failed to fetch page" };
+    if (!fetchResult.success || !fetchResult.html) {
+      return { success: false, error: fetchResult.error || "Failed to fetch page" };
     }
 
-    const html = result.html;
+    const html = fetchResult.html;
     const cleanedHtml = cleanHtmlForLLM(html);
 
     // Initialize Gemini
