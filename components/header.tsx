@@ -8,6 +8,8 @@ import { ShareByEmailDialog } from "./share-by-email-dialog";
 import { ShareAsImageDialog } from "./share-as-image-dialog";
 import { ThemeToggle } from "./theme-toggle";
 import { CurrencySelector } from "./currency-selector";
+import { FeedbackButton } from "./feedback-button";
+import { TourButton } from "./tour-button";
 import { Gift } from "@/db/schema";
 
 interface HeaderProps {
@@ -34,7 +36,13 @@ export function Header({
         </Link>
         <div className="flex items-center gap-2">
           <CurrencySelector currentCurrency={currency} />
-          <ThemeToggle />
+          <div data-tour="theme-toggle">
+            <ThemeToggle />
+          </div>
+          <div data-tour="feedback-button">
+            <FeedbackButton />
+          </div>
+          <TourButton />
           {listId && listName && (
             <>
               <ShareAsImageDialog
