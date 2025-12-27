@@ -665,16 +665,19 @@ export async function scrapePriceFromScreenshot(url: string): Promise<PriceResul
     const screenshot = await takeScreenshot(url);
 
     if (!screenshot) {
+      console.error('Screenshot capture failed for:', url);
       return {
         success: false,
         error: "Failed to capture screenshot",
       };
     }
 
+    console.log('Extracting price from screenshot using Gemini Vision...');
     // Extract price using Gemini Vision
     const result = await extractMetadataFromScreenshot(screenshot);
 
     if (result.success && result.price) {
+      console.log(`✓ Price extracted: $${result.price}`);
       return {
         success: true,
         price: result.price,
@@ -683,11 +686,13 @@ export async function scrapePriceFromScreenshot(url: string): Promise<PriceResul
       };
     }
 
+    console.error('Failed to extract price:', result.error || 'No price found');
     return {
       success: false,
       error: result.error || "Could not extract price from screenshot",
     };
   } catch (error) {
+    console.error('Screenshot extraction error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Screenshot extraction failed",
