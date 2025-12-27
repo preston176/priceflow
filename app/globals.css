@@ -47,3 +47,69 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Driver.js Tour Theme - Winter Elegance */
+.driver-popover {
+  @apply bg-card text-card-foreground border-border shadow-2xl;
+}
+
+.driver-popover-title {
+  @apply text-foreground font-semibold;
+}
+
+.driver-popover-description {
+  @apply text-muted-foreground;
+}
+
+.driver-popover-progress-text {
+  @apply text-xs text-muted-foreground;
+}
+
+.driver-popover-footer {
+  @apply border-t border-border;
+}
+
+/* Tour Buttons */
+.driver-popover-close-btn {
+  @apply text-muted-foreground hover:text-foreground transition-colors;
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn {
+  @apply bg-teal-600 hover:bg-teal-500 text-white font-medium transition-colors;
+  @apply border-0 shadow-sm;
+}
+
+.driver-popover-prev-btn:disabled,
+.driver-popover-next-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Active Element Highlight */
+.driver-active-element {
+  @apply shadow-2xl;
+}
+
+/* Overlay */
+.driver-overlay {
+  @apply bg-black/80;
+}
+
+/* Progress Bar */
+.driver-popover-progress {
+  @apply bg-muted;
+}
+
+.driver-popover-progress-bar {
+  @apply bg-teal-600;
+}
+
+/* Dark mode specific adjustments */
+.dark .driver-popover {
+  @apply shadow-2xl border-white/10;
+}
+
+.dark .driver-popover-prev-btn,
+.dark .driver-popover-next-btn {
+  @apply bg-teal-600 hover:bg-teal-500;
+}
