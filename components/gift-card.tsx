@@ -32,6 +32,9 @@ export function GiftCard({ gift }: GiftCardProps) {
   const [showMarketplaces, setShowMarketplaces] = useState(false);
   const [isCheckingPrice, setIsCheckingPrice] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
+  const [isTogglingPurchased, setIsTogglingPurchased] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingAutoUpdate, setIsTogglingAutoUpdate] = useState(false);
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [loadingMarketplaces, setLoadingMarketplaces] = useState(false);
   const { toast } = useToast();
@@ -60,25 +63,46 @@ export function GiftCard({ gift }: GiftCardProps) {
   };
 
   const handleTogglePurchased = async () => {
+    setIsTogglingPurchased(true);
     try {
       await togglePurchased(gift.id);
     } catch (error) {
       console.error("Failed to toggle purchased:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update purchase status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTogglingPurchased(false);
     }
   };
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this gift?")) {
+      setIsDeleting(true);
       try {
         await deleteGift(gift.id);
+        toast({
+          title: "Gift deleted",
+          description: "The gift has been removed from your list",
+        });
       } catch (error) {
         console.error("Failed to delete gift:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete gift",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
 
   const handleToggleAutoUpdate = async () => {
     const newState = !gift.autoUpdateEnabled;
+    setIsTogglingAutoUpdate(true);
 
     try {
       await toggleAutoUpdate(gift.id, newState);
@@ -96,6 +120,8 @@ export function GiftCard({ gift }: GiftCardProps) {
         description: "Failed to toggle auto update",
         variant: "destructive",
       });
+    } finally {
+      setIsTogglingAutoUpdate(false);
     }
   };
 
@@ -304,6 +330,7 @@ export function GiftCard({ gift }: GiftCardProps) {
                 ) : marketplaceProducts.length > 0 ? (
                   <MarketplaceComparison
                     giftId={gift.id}
+                    giftName={gift.name}
                     products={marketplaceProducts}
                     currentPrimaryMarketplace={gift.primaryMarketplace}
                   />
@@ -325,8 +352,13 @@ export function GiftCard({ gift }: GiftCardProps) {
             variant={gift.autoUpdateEnabled ? "default" : "outline"}
             size="sm"
             className="flex-1"
+            disabled={isTogglingAutoUpdate}
           >
-            <Zap className="h-4 w-4 mr-1" />
+            {isTogglingAutoUpdate ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4 mr-1" />
+            )}
             {gift.autoUpdateEnabled ? "Auto: ON" : "Auto: OFF"}
           </Button>
           {gift.autoUpdateEnabled && (
@@ -397,16 +429,29 @@ export function GiftCard({ gift }: GiftCardProps) {
             variant={gift.isPurchased ? "outline" : "default"}
             className="flex-1"
             size="sm"
+            disabled={isTogglingPurchased || isDeleting}
           >
-            {gift.isPurchased ? "Mark Unpurchased" : "Mark Purchased"}
+            {isTogglingPurchased ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>{gift.isPurchased ? "Mark Unpurchased" : "Mark Purchased"}</>
+            )}
           </Button>
           <Button
             onClick={handleDelete}
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
+            disabled={isDeleting || isTogglingPurchased}
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </CardFooter>
