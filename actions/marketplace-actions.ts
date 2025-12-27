@@ -11,7 +11,7 @@ import {
   type ProductSearchResult,
   type MarketplaceSearchOptions,
 } from "@/lib/marketplace-search";
-import { scrapePrice } from "@/lib/price-scraper";
+import { scrapePriceFromScreenshot } from "@/lib/price-scraper";
 
 /**
  * Search for products across all marketplaces
@@ -234,12 +234,12 @@ export async function syncMarketplacePrices(giftId: string) {
     const errors: string[] = [];
     let updated = 0;
 
-    // Check prices for all marketplace products using AI
-    // No delays needed since we're using AI extraction, not scraping
+    // Check prices using screenshot + Gemini Vision
+    // Bypasses anti-bot protection completely
     for (const mp of gift.marketplaceProducts) {
       try {
-        // Use AI-only mode to skip failed scraping attempts
-        const result = await scrapePrice(mp.productUrl, true);
+        // Use screenshot-based extraction for maximum reliability
+        const result = await scrapePriceFromScreenshot(mp.productUrl);
 
         if (result.success && result.price) {
           await db

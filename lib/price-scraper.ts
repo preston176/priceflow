@@ -620,6 +620,82 @@ JSON RESPONSE:`;
 }
 
 /**
+ * Take screenshot of URL using Screenshot API
+ * Returns base64 encoded image
+ */
+async function takeScreenshot(url: string): Promise<string | null> {
+  const apiKey = process.env.SCREENSHOT_API_KEY;
+
+  if (!apiKey) {
+    console.error('SCREENSHOT_API_KEY not configured');
+    return null;
+  }
+
+  try {
+    const apiUrl = `https://shot.screenshotapi.net/screenshot?token=${apiKey}&url=${encodeURIComponent(url)}&output=base64&file_type=png&wait_for_event=load`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      console.error(`Screenshot API failed: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.screenshot) {
+      return data.screenshot;
+    }
+
+    console.error('Screenshot API: No screenshot in response');
+    return null;
+  } catch (error) {
+    console.error('Screenshot API error:', error);
+    return null;
+  }
+}
+
+/**
+ * Extract price from URL using screenshot + Gemini Vision
+ * More reliable than HTML scraping for protected sites
+ */
+export async function scrapePriceFromScreenshot(url: string): Promise<PriceResult> {
+  try {
+    // Take screenshot
+    const screenshot = await takeScreenshot(url);
+
+    if (!screenshot) {
+      return {
+        success: false,
+        error: "Failed to capture screenshot",
+      };
+    }
+
+    // Extract price using Gemini Vision
+    const result = await extractMetadataFromScreenshot(screenshot);
+
+    if (result.success && result.price) {
+      return {
+        success: true,
+        price: result.price,
+        currency: "USD",
+        source: "screenshot-vision",
+      };
+    }
+
+    return {
+      success: false,
+      error: result.error || "Could not extract price from screenshot",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Screenshot extraction failed",
+    };
+  }
+}
+
+/**
  * Extract product metadata from screenshot using Gemini Vision
  * Analyzes product page screenshots to extract name, price, and image
  */
