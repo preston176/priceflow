@@ -297,32 +297,32 @@ export function GiftCard({ gift }: GiftCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-between"
+              className="w-full justify-between h-auto py-2 px-3"
               onClick={() => setShowMarketplaces(!showMarketplaces)}
             >
-              <div className="flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                <span className="text-sm font-medium">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                <Store className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">
                   {marketplaceProducts.length > 0
                     ? `${marketplaceProducts.length} Marketplace${marketplaceProducts.length !== 1 ? 's' : ''}`
                     : "View Marketplaces"}
                 </span>
                 {gift.primaryMarketplace && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs flex-shrink-0 hidden sm:inline-flex">
                     {gift.primaryMarketplace}
                   </Badge>
                 )}
               </div>
               {showMarketplaces ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-4 w-4 flex-shrink-0 ml-2" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
               )}
             </Button>
 
             {/* Marketplace comparison view */}
             {showMarketplaces && (
-              <div className="mt-3">
+              <div className="mt-3 -mx-1 sm:mx-0">
                 {loadingMarketplaces ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -335,7 +335,7 @@ export function GiftCard({ gift }: GiftCardProps) {
                     currentPrimaryMarketplace={gift.primaryMarketplace}
                   />
                 ) : (
-                  <div className="text-center py-4 text-sm text-muted-foreground">
+                  <div className="text-center py-4 text-xs sm:text-sm text-muted-foreground">
                     No marketplace products tracked yet
                   </div>
                 )}
