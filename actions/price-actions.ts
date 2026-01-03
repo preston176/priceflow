@@ -2,15 +2,15 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { gifts, profiles, priceHistory } from "@/db/schema";
+import { items, profiles, priceHistory } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { scrapePrice } from "@/lib/price-scraper";
 
 /**
- * Manually check price for a gift
+ * Manually check price for an item
  */
-export async function checkPriceNow(giftId: string) {
+export async function checkPriceNow(itemId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -27,23 +27,23 @@ export async function checkPriceNow(giftId: string) {
     throw new Error("Profile not found");
   }
 
-  // Get the gift
-  const [gift] = await db
+  // Get the item
+  const [item] = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)))
+    .from(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)))
     .limit(1);
 
-  if (!gift) {
-    throw new Error("Gift not found");
+  if (!item) {
+    throw new Error("Item not found");
   }
 
-  if (!gift.url) {
+  if (!item.url) {
     throw new Error("No product URL provided");
   }
 
   // Scrape the price
-  const result = await scrapePrice(gift.url);
+  const result = await scrapePrice(item.url);
 
   if (!result.success || !result.price) {
     return {
@@ -54,25 +54,25 @@ export async function checkPriceNow(giftId: string) {
 
   const newPrice = result.price.toString();
 
-  // Update gift with new price
+  // Update item with new price
   await db
-    .update(gifts)
+    .update(items)
     .set({
       currentPrice: newPrice,
       lastPriceCheck: new Date(),
-      lowestPriceEver: gift.lowestPriceEver
-        ? Math.min(parseFloat(gift.lowestPriceEver), result.price).toString()
+      lowestPriceEver: item.lowestPriceEver
+        ? Math.min(parseFloat(item.lowestPriceEver), result.price).toString()
         : newPrice,
-      highestPriceEver: gift.highestPriceEver
-        ? Math.max(parseFloat(gift.highestPriceEver), result.price).toString()
+      highestPriceEver: item.highestPriceEver
+        ? Math.max(parseFloat(item.highestPriceEver), result.price).toString()
         : newPrice,
       updatedAt: new Date(),
     })
-    .where(eq(gifts.id, giftId));
+    .where(eq(items.id, itemId));
 
   // Add to price history
   await db.insert(priceHistory).values({
-    giftId,
+    itemId,
     price: newPrice,
     source: result.source,
   });
@@ -87,10 +87,10 @@ export async function checkPriceNow(giftId: string) {
 }
 
 /**
- * Enable or disable price tracking for a gift
+ * Enable or disable price tracking for an item
  */
 export async function togglePriceTracking(
-  giftId: string,
+  itemId: string,
   enabled: boolean,
   alertThreshold?: string
 ) {
@@ -111,21 +111,21 @@ export async function togglePriceTracking(
   }
 
   await db
-    .update(gifts)
+    .update(items)
     .set({
       priceTrackingEnabled: enabled,
       priceAlertThreshold: alertThreshold || null,
       updatedAt: new Date(),
     })
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)));
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)));
 
   revalidatePath("/dashboard");
 }
 
 /**
- * Get price history for a gift
+ * Get price history for an item
  */
-export async function getPriceHistory(giftId: string) {
+export async function getPriceHistory(itemId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -143,20 +143,20 @@ export async function getPriceHistory(giftId: string) {
   }
 
   // Verify ownership
-  const [gift] = await db
+  const [item] = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)))
+    .from(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)))
     .limit(1);
 
-  if (!gift) {
+  if (!item) {
     return [];
   }
 
   const history = await db
     .select()
     .from(priceHistory)
-    .where(eq(priceHistory.giftId, giftId))
+    .where(eq(priceHistory.itemId, itemId))
     .orderBy(desc(priceHistory.checkedAt))
     .limit(30); // Last 30 price checks
 
@@ -164,92 +164,92 @@ export async function getPriceHistory(giftId: string) {
 }
 
 /**
- * Get all gifts that need price checking
+ * Get all items that need price checking
  * Used by cron job
  */
-export async function getGiftsForPriceCheck() {
-  // Get all gifts with price tracking enabled that haven't been checked in 24h
+export async function getItemsForPriceCheck() {
+  // Get all items with price tracking enabled that haven't been checked in 24h
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const giftsToCheck = await db
+  const itemsToCheck = await db
     .select()
-    .from(gifts)
+    .from(items)
     .where(
       and(
-        eq(gifts.priceTrackingEnabled, true),
-        eq(gifts.isPurchased, false)
+        eq(items.priceTrackingEnabled, true),
+        eq(items.isPurchased, false)
       )
     )
     .limit(100); // Process 100 at a time to avoid timeouts
 
-  // Filter for gifts that haven't been checked recently
-  return giftsToCheck.filter(
-    (gift) =>
-      !gift.lastPriceCheck || new Date(gift.lastPriceCheck) < twentyFourHoursAgo
+  // Filter for items that haven't been checked recently
+  return itemsToCheck.filter(
+    (item) =>
+      !item.lastPriceCheck || new Date(item.lastPriceCheck) < twentyFourHoursAgo
   );
 }
 
 /**
- * Check prices for a batch of gifts
+ * Check prices for a batch of items
  * Used by cron job
  */
-export async function checkPricesForGifts(giftIds: string[]) {
+export async function checkPricesForItems(itemIds: string[]) {
   const results = [];
 
-  for (const giftId of giftIds) {
+  for (const itemId of itemIds) {
     try {
-      const [gift] = await db
+      const [item] = await db
         .select()
-        .from(gifts)
-        .where(eq(gifts.id, giftId))
+        .from(items)
+        .where(eq(items.id, itemId))
         .limit(1);
 
-      if (!gift || !gift.url) {
+      if (!item || !item.url) {
         continue;
       }
 
-      const result = await scrapePrice(gift.url);
+      const result = await scrapePrice(item.url);
 
       if (result.success && result.price) {
         const newPrice = result.price.toString();
 
-        // Update gift
+        // Update item
         await db
-          .update(gifts)
+          .update(items)
           .set({
             currentPrice: newPrice,
             lastPriceCheck: new Date(),
-            lowestPriceEver: gift.lowestPriceEver
-              ? Math.min(parseFloat(gift.lowestPriceEver), result.price).toString()
+            lowestPriceEver: item.lowestPriceEver
+              ? Math.min(parseFloat(item.lowestPriceEver), result.price).toString()
               : newPrice,
-            highestPriceEver: gift.highestPriceEver
-              ? Math.max(parseFloat(gift.highestPriceEver), result.price).toString()
+            highestPriceEver: item.highestPriceEver
+              ? Math.max(parseFloat(item.highestPriceEver), result.price).toString()
               : newPrice,
             updatedAt: new Date(),
           })
-          .where(eq(gifts.id, giftId));
+          .where(eq(items.id, itemId));
 
         // Add to price history
         await db.insert(priceHistory).values({
-          giftId,
+          itemId,
           price: newPrice,
           source: result.source,
         });
 
         // Check if we should send alert
         const shouldAlert =
-          gift.priceAlertThreshold &&
-          result.price <= parseFloat(gift.priceAlertThreshold);
+          item.priceAlertThreshold &&
+          result.price <= parseFloat(item.priceAlertThreshold);
 
         results.push({
-          giftId,
+          itemId,
           success: true,
           price: result.price,
           shouldAlert,
         });
       } else {
         results.push({
-          giftId,
+          itemId,
           success: false,
           error: result.error,
         });
@@ -259,7 +259,7 @@ export async function checkPricesForGifts(giftIds: string[]) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
       results.push({
-        giftId,
+        itemId,
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       });

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { marketplaceProducts, gifts } from "@/db/schema";
+import { marketplaceProducts, items } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
   searchAllMarketplaces,
@@ -57,10 +57,10 @@ export async function searchProducts(
 }
 
 /**
- * Add a marketplace product to an existing gift
+ * Add a marketplace product to an existing item
  */
 export async function addMarketplaceProduct(
-  giftId: string,
+  itemId: string,
   marketplace: string,
   productUrl: string,
   options?: {
@@ -75,20 +75,20 @@ export async function addMarketplaceProduct(
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: { profile: true },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     // Check if marketplace product already exists
     const existing = await db.query.marketplaceProducts.findFirst({
       where: and(
-        eq(marketplaceProducts.giftId, giftId),
+        eq(marketplaceProducts.itemId, itemId),
         eq(marketplaceProducts.marketplace, marketplace)
       ),
     });
@@ -108,7 +108,7 @@ export async function addMarketplaceProduct(
     } else {
       // Insert new
       await db.insert(marketplaceProducts).values({
-        giftId,
+        itemId,
         marketplace,
         productUrl,
         productName: options?.productName,
@@ -129,10 +129,10 @@ export async function addMarketplaceProduct(
 }
 
 /**
- * Remove a marketplace product from a gift
+ * Remove a marketplace product from an item
  */
 export async function removeMarketplaceProduct(
-  giftId: string,
+  itemId: string,
   marketplace: string
 ) {
   try {
@@ -141,21 +141,21 @@ export async function removeMarketplaceProduct(
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: { profile: true },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     await db
       .delete(marketplaceProducts)
       .where(
         and(
-          eq(marketplaceProducts.giftId, giftId),
+          eq(marketplaceProducts.itemId, itemId),
           eq(marketplaceProducts.marketplace, marketplace)
         )
       );
@@ -172,31 +172,31 @@ export async function removeMarketplaceProduct(
 }
 
 /**
- * Get all marketplace products for a gift
+ * Get all marketplace products for an item
  */
-export async function getMarketplaceProducts(giftId: string) {
+export async function getMarketplaceProducts(itemId: string) {
   try {
     const { userId } = await auth();
     if (!userId) {
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: {
         profile: true,
         marketplaceProducts: true,
       },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     return {
       success: true,
-      products: gift.marketplaceProducts,
+      products: item.marketplaceProducts,
     };
   } catch (error) {
     console.error("Get marketplace products error:", error);
@@ -209,7 +209,7 @@ export async function getMarketplaceProducts(giftId: string) {
 }
 
 /**
- * Sync prices across all marketplaces for a gift
+ * Sync prices across all marketplaces for an item
  */
 // Marketplace search URL generator (same as in marketplace-comparison.tsx)
 function getMarketplaceSearchUrl(marketplace: string, productName: string): string {
@@ -229,24 +229,24 @@ function getMarketplaceSearchUrl(marketplace: string, productName: string): stri
   }
 }
 
-export async function syncMarketplacePrices(giftId: string) {
+export async function syncMarketplacePrices(itemId: string) {
   try {
     const { userId } = await auth();
     if (!userId) {
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: {
         profile: true,
         marketplaceProducts: true,
       },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     const errors: string[] = [];
@@ -254,10 +254,10 @@ export async function syncMarketplacePrices(giftId: string) {
 
     // Check prices using screenshot + Gemini Vision
     // Bypasses anti-bot protection completely
-    for (const mp of gift.marketplaceProducts) {
+    for (const mp of item.marketplaceProducts) {
       try {
         // Use search URL instead of product URL for screenshots
-        const searchUrl = getMarketplaceSearchUrl(mp.marketplace, gift.name);
+        const searchUrl = getMarketplaceSearchUrl(mp.marketplace, item.name);
         console.log(`Syncing ${mp.marketplace} using search URL: ${searchUrl}`);
 
         // Use screenshot-based extraction for maximum reliability
@@ -284,13 +284,13 @@ export async function syncMarketplacePrices(giftId: string) {
       }
     }
 
-    // Update gift's last sync timestamp
+    // Update item's last sync timestamp
     await db
-      .update(gifts)
+      .update(items)
       .set({
         lastMarketplaceSync: new Date(),
       })
-      .where(eq(gifts.id, giftId));
+      .where(eq(items.id, itemId));
 
     revalidatePath("/dashboard");
 
@@ -311,10 +311,10 @@ export async function syncMarketplacePrices(giftId: string) {
 }
 
 /**
- * Set the primary marketplace for a gift
+ * Set the primary marketplace for an item
  */
 export async function setPrimaryMarketplace(
-  giftId: string,
+  itemId: string,
   marketplace: string
 ) {
   try {
@@ -323,20 +323,20 @@ export async function setPrimaryMarketplace(
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: { profile: true },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     // Verify marketplace product exists
     const mp = await db.query.marketplaceProducts.findFirst({
       where: and(
-        eq(marketplaceProducts.giftId, giftId),
+        eq(marketplaceProducts.itemId, itemId),
         eq(marketplaceProducts.marketplace, marketplace)
       ),
     });
@@ -345,15 +345,15 @@ export async function setPrimaryMarketplace(
       throw new Error("Marketplace product not found");
     }
 
-    // Update gift's primary marketplace and current price
+    // Update item's primary marketplace and current price
     await db
-      .update(gifts)
+      .update(items)
       .set({
         primaryMarketplace: marketplace,
         currentPrice: mp.currentPrice,
         url: mp.productUrl,
       })
-      .where(eq(gifts.id, giftId));
+      .where(eq(items.id, itemId));
 
     revalidatePath("/dashboard");
     return { success: true };
@@ -370,7 +370,7 @@ export async function setPrimaryMarketplace(
  * Add multiple marketplace products at once (bulk operation)
  */
 export async function addMultipleMarketplaceProducts(
-  giftId: string,
+  itemId: string,
   products: Array<{
     marketplace: string;
     productUrl: string;
@@ -386,19 +386,19 @@ export async function addMultipleMarketplaceProducts(
       throw new Error("Unauthorized");
     }
 
-    // Verify gift belongs to user
-    const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.id, giftId),
+    // Verify item belongs to user
+    const item = await db.query.items.findFirst({
+      where: eq(items.id, itemId),
       with: { profile: true },
     });
 
-    if (!gift || gift.profile.clerkUserId !== userId) {
-      throw new Error("Gift not found or unauthorized");
+    if (!item || item.profile.clerkUserId !== userId) {
+      throw new Error("Item not found or unauthorized");
     }
 
     // Insert all marketplace products
     const values = products.map((p) => ({
-      giftId,
+      itemId,
       marketplace: p.marketplace,
       productUrl: p.productUrl,
       productName: p.productName,
@@ -415,13 +415,13 @@ export async function addMultipleMarketplaceProducts(
 
     if (bestProduct) {
       await db
-        .update(gifts)
+        .update(items)
         .set({
           primaryMarketplace: bestProduct.marketplace,
           currentPrice: bestPrice.toString(),
           url: bestProduct.productUrl,
         })
-        .where(eq(gifts.id, giftId));
+        .where(eq(items.id, itemId));
     }
 
     revalidatePath("/dashboard");

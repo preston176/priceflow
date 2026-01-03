@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { lists, profiles, gifts } from "@/db/schema";
+import { lists, profiles, items } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -312,26 +312,26 @@ export async function duplicateList(listId: string) {
     })
     .returning();
 
-  // Get all unpurchased gifts from original list
-  const originalGifts = await db
+  // Get all unpurchased items from original list
+  const originalItems = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.listId, listId), eq(gifts.isPurchased, false)));
+    .from(items)
+    .where(and(eq(items.listId, listId), eq(items.isPurchased, false)));
 
-  // Copy gifts to new list, keeping only recipient names
-  if (originalGifts.length > 0) {
-    await db.insert(gifts).values(
-      originalGifts.map((gift) => ({
+  // Copy items to new list, keeping only recipient names
+  if (originalItems.length > 0) {
+    await db.insert(items).values(
+      originalItems.map((item) => ({
         userId: profile.id,
         listId: newList.id,
-        name: gift.name,
-        recipientName: gift.recipientName,
-        targetPrice: gift.targetPrice,
+        name: item.name,
+        recipientName: item.recipientName,
+        targetPrice: item.targetPrice,
         currentPrice: null,
         url: null,
         imageUrl: null,
         isPurchased: false,
-        priority: gift.priority,
+        priority: item.priority,
         notes: null,
         priceTrackingEnabled: false,
         priceAlertThreshold: null,

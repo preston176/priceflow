@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { shareTokens, lists, profiles, gifts, listCollaborators } from "@/db/schema";
+import { shareTokens, lists, profiles, items, listCollaborators } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { generateShareToken } from "@/lib/utils";
 import { Resend } from "resend";
@@ -132,11 +132,11 @@ export async function getSharedWishlist(token: string) {
     return null;
   }
 
-  const wishlistGifts = await db
+  const wishlistItems = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.listId, list.id), eq(gifts.isPurchased, false)))
-    .orderBy(desc(gifts.priority), desc(gifts.createdAt));
+    .from(items)
+    .where(and(eq(items.listId, list.id), eq(items.isPurchased, false)))
+    .orderBy(desc(items.priority), desc(items.createdAt));
 
   return {
     list: {
@@ -147,7 +147,7 @@ export async function getSharedWishlist(token: string) {
       name: profile.name,
       imageUrl: profile.imageUrl,
     },
-    gifts: wishlistGifts,
+    items: wishlistItems,
   };
 }
 
@@ -213,7 +213,7 @@ export async function shareListByEmail(listId: string, email: string) {
     await resend.emails.send({
       from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
       to: email,
-      subject: `${senderName} shared a gift list with you on PriceFlow`,
+      subject: `${senderName} shared an item list with you on PriceFlow`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -286,12 +286,12 @@ export async function shareListByEmail(listId: string, email: string) {
             <div class="container">
               <div class="header">
                 <h1 style="margin: 0; font-size: 28px;">🎁 You've Been Invited!</h1>
-                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">Someone shared a gift list with you</p>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">Someone shared an item list with you</p>
               </div>
 
               <div class="content">
                 <p style="font-size: 15px; color: #475569;">
-                  <strong>${senderName}</strong> has shared their gift list with you on PriceFlow.
+                  <strong>${senderName}</strong> has shared their item list with you on PriceFlow.
                 </p>
 
                 <div class="list-box">
@@ -300,7 +300,7 @@ export async function shareListByEmail(listId: string, email: string) {
                 </div>
 
                 <div style="text-align: center; margin: 35px 0;">
-                  <a href="${shareUrl}" class="cta">View Gift List</a>
+                  <a href="${shareUrl}" class="cta">View Item List</a>
                 </div>
 
                 <div class="link-box">
