@@ -17,11 +17,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { BudgetProgress } from "@/components/budget-progress";
-import { AddGiftDialog } from "@/components/add-gift-dialog";
-import { GiftCard } from "@/components/gift-card";
+import { AddItemDialog } from "@/components/add-item-dialog";
+import { ItemCard } from "@/components/item-card";
 import { ListSelector } from "@/components/list-selector";
 import { OnboardingDialog } from "@/components/onboarding-dialog";
-import { List, Gift } from "@/db/schema";
+import { List, Item } from "@/db/schema";
 import { unarchiveList } from "@/actions/list-actions";
 
 interface DashboardContentProps {
@@ -33,7 +33,7 @@ interface DashboardContentProps {
   lists: List[];
   archivedLists: List[];
   initialListId?: string;
-  initialGifts: Gift[];
+  initialItems: Item[];
 }
 
 export function DashboardContent({
@@ -41,7 +41,7 @@ export function DashboardContent({
   lists,
   archivedLists,
   initialListId,
-  initialGifts,
+  initialItems,
 }: DashboardContentProps) {
   const router = useRouter();
   const [currentListId, setCurrentListId] = useState(initialListId);
@@ -66,30 +66,30 @@ export function DashboardContent({
   };
 
   const currentList = lists.find((l) => l.id === currentListId) || lists[0];
-  const gifts = currentList
-    ? initialGifts.filter((g) => g.listId === currentList.id)
+  const items = currentList
+    ? initialItems.filter((i) => i.listId === currentList.id)
     : [];
 
-  const totalSpent = gifts
-    .filter((g) => g.isPurchased)
-    .reduce((sum, g) => sum + parseFloat(g.currentPrice || g.targetPrice), 0);
+  const totalSpent = items
+    .filter((i) => i.isPurchased)
+    .reduce((sum, i) => sum + parseFloat(i.currentPrice || i.targetPrice), 0);
 
-  const savingsAlerts = gifts.filter((g) => {
-    if (!g.currentPrice || !g.priceTrackingEnabled) return false;
-    const current = parseFloat(g.currentPrice);
-    const target = parseFloat(g.targetPrice);
+  const savingsAlerts = items.filter((i) => {
+    if (!i.currentPrice || !i.priceTrackingEnabled) return false;
+    const current = parseFloat(i.currentPrice);
+    const target = parseFloat(i.targetPrice);
     return current < target;
   });
 
-  const totalPotentialSavings = savingsAlerts.reduce((sum, g) => {
-    const current = parseFloat(g.currentPrice!);
-    const target = parseFloat(g.targetPrice);
+  const totalPotentialSavings = savingsAlerts.reduce((sum, i) => {
+    const current = parseFloat(i.currentPrice!);
+    const target = parseFloat(i.targetPrice);
     return sum + (target - current);
   }, 0);
 
-  const purchasedCount = gifts.filter((g) => g.isPurchased).length;
-  const totalGifts = gifts.length;
-  const purchaseProgress = totalGifts > 0 ? (purchasedCount / totalGifts) * 100 : 0;
+  const purchasedCount = items.filter((i) => i.isPurchased).length;
+  const totalItems = items.length;
+  const purchaseProgress = totalItems > 0 ? (purchasedCount / totalItems) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -101,7 +101,7 @@ export function DashboardContent({
         listName={currentList?.name}
         currency={profile.currency}
         userName={profile.name || undefined}
-        gifts={gifts}
+        items={items}
       />
 
       <main className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-7xl">
@@ -116,7 +116,7 @@ export function DashboardContent({
                 Welcome back, {profile.name}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Track your gift shopping and stay on budget
+                Track your items and stay on budget
               </p>
             </div>
           </div>
@@ -145,7 +145,7 @@ export function DashboardContent({
                 />
               </div>
 
-              {/* Total Gifts Card */}
+              {/* Total Items Card */}
               <Card className="group hover:shadow-lg transition-all duration-300 border-muted/40">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -153,12 +153,12 @@ export function DashboardContent({
                       <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <span className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      {purchasedCount}/{totalGifts}
+                      {purchasedCount}/{totalItems}
                     </span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold mb-1">{totalGifts}</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Total Gifts</p>
-                  {totalGifts > 0 && (
+                  <h3 className="text-xl sm:text-2xl font-bold mb-1">{totalItems}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Items</p>
+                  {totalItems > 0 && (
                     <div className="mt-4">
                       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
@@ -218,22 +218,22 @@ export function DashboardContent({
               </Card>
             </div>
 
-            {/* Gifts Section */}
+            {/* Items Section */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Your Gifts</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Your Items</h2>
                   <p className="text-muted-foreground text-xs sm:text-sm">
-                    Manage and track your gift list
+                    Manage and track your item list
                   </p>
                 </div>
-                <AddGiftDialog lists={lists} currentListId={currentList.id} />
+                <AddItemDialog lists={lists} currentListId={currentList.id} />
               </div>
 
-              {gifts.length > 0 ? (
+              {items.length > 0 ? (
                 <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                  {gifts.map((gift) => (
-                    <GiftCard key={gift.id} gift={gift} />
+                  {items.map((item) => (
+                    <ItemCard key={item.id} item={item} />
                   ))}
                 </div>
               ) : (
@@ -242,11 +242,11 @@ export function DashboardContent({
                     <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                       <Package className="h-10 w-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">No gifts yet</h3>
+                    <h3 className="text-xl font-semibold mb-2">No items yet</h3>
                     <p className="text-muted-foreground mb-6 text-center max-w-sm">
-                      Start building your gift list by adding items you want to purchase
+                      Start building your list by adding items you want to purchase
                     </p>
-                    <AddGiftDialog lists={lists} currentListId={currentList.id} />
+                    <AddItemDialog lists={lists} currentListId={currentList.id} />
                   </CardContent>
                 </Card>
               )}

@@ -14,16 +14,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift } from "@/db/schema";
-import { updateGiftPrice, analyzeProductScreenshot } from "@/actions/gift-actions";
+import { Item } from "@/db/schema";
+import { updateItemPrice, analyzeProductScreenshot } from "@/actions/item-actions";
 import { useRouter } from "next/navigation";
 import { CaptureFromUrlDialog } from "./capture-from-url-dialog";
 
 interface UpdatePriceDialogProps {
-  gift: Gift;
+  item: Item;
 }
 
-export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
+export function UpdatePriceDialog({ item }: UpdatePriceDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
 
     setLoading(true);
     try {
-      await updateGiftPrice(gift.id, parseFloat(manualPrice));
+      await updateItemPrice(item.id, parseFloat(manualPrice));
       setOpen(false);
       setManualPrice("");
       router.refresh();
@@ -63,7 +63,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
         const result = await analyzeProductScreenshot(base64);
 
         if (result.success && result.price) {
-          await updateGiftPrice(gift.id, result.price);
+          await updateItemPrice(item.id, result.price);
           setOpen(false);
           setScreenshotFile(null);
           router.refresh();
@@ -90,7 +90,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
   const handlePriceExtracted = async (price: number, name?: string) => {
     setLoading(true);
     try {
-      await updateGiftPrice(gift.id, price);
+      await updateItemPrice(item.id, price);
       setOpen(false);
       router.refresh();
     } catch (error) {
@@ -111,7 +111,7 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Update Price for {gift.name}</DialogTitle>
+          <DialogTitle>Update Price for {item.name}</DialogTitle>
           <DialogDescription>
             Enter the current price manually or upload a screenshot for AI extraction
           </DialogDescription>
@@ -149,9 +149,9 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
                     )}
                   </Button>
                 </div>
-                {gift.currentPrice && (
+                {item.currentPrice && (
                   <p className="text-sm text-muted-foreground">
-                    Last recorded: ${parseFloat(gift.currentPrice).toFixed(2)}
+                    Last recorded: ${parseFloat(item.currentPrice).toFixed(2)}
                   </p>
                 )}
               </div>
@@ -229,11 +229,11 @@ export function UpdatePriceDialog({ gift }: UpdatePriceDialogProps) {
         </Tabs>
 
         <div className="text-sm text-muted-foreground pt-4 border-t">
-          <p className="font-medium mb-1">Target Price: ${parseFloat(gift.targetPrice).toFixed(2)}</p>
-          {gift.currentPrice && parseFloat(gift.currentPrice) < parseFloat(gift.targetPrice) && (
+          <p className="font-medium mb-1">Target Price: ${parseFloat(item.targetPrice).toFixed(2)}</p>
+          {item.currentPrice && parseFloat(item.currentPrice) < parseFloat(item.targetPrice) && (
             <p className="text-green-500 font-medium">
               Current price is below target! Save $
-              {(parseFloat(gift.targetPrice) - parseFloat(gift.currentPrice)).toFixed(2)}
+              {(parseFloat(item.targetPrice) - parseFloat(item.currentPrice)).toFixed(2)}
             </p>
           )}
         </div>
