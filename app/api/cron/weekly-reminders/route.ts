@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { gifts, profiles } from "@/db/schema";
+import { items, profiles } from "@/db/schema";
 import { eq, and, or, isNull, sql } from "drizzle-orm";
 import { sendWeeklyReminderEmail } from "@/lib/email";
 
@@ -18,10 +18,10 @@ async function handleRequest(request: NextRequest) {
 
     console.log("Starting weekly reminder cron job...");
 
-    // Get all users with their gift statistics
+    // Get all users with their item statistics
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    // Query all profiles with their gifts
+    // Query all profiles with their items
     const allProfiles = await db
       .select({
         id: profiles.id,
@@ -42,25 +42,25 @@ async function handleRequest(request: NextRequest) {
 
     for (const profile of allProfiles) {
       try {
-        // Get user's gifts that need price checking
-        const userGifts = await db
+        // Get user's items that need price checking
+        const userItems = await db
           .select()
-          .from(gifts)
+          .from(items)
           .where(
             and(
-              eq(gifts.userId, profile.id),
-              eq(gifts.isPurchased, false),
-              sql`${gifts.url} IS NOT NULL AND ${gifts.url} != ''`
+              eq(items.userId, profile.id),
+              eq(items.isPurchased, false),
+              sql`${items.url} IS NOT NULL AND ${items.url} != ''`
             )
           );
 
         // Count items without recent price checks
-        const itemsToCheck = userGifts.filter(
-          (g) => !g.lastPriceCheck || new Date(g.lastPriceCheck) < sevenDaysAgo
+        const itemsNeedingCheck = userItems.filter(
+          (item) => !item.lastPriceCheck || new Date(item.lastPriceCheck) < sevenDaysAgo
         ).length;
 
         // Skip if no items need checking
-        if (itemsToCheck === 0) {
+        if (itemsNeedingCheck === 0) {
           results.skipped++;
           console.log(
             `Skipping ${profile.name || profile.email}: No items to check`
@@ -69,14 +69,14 @@ async function handleRequest(request: NextRequest) {
         }
 
         // Calculate current savings
-        const giftsWithPrices = userGifts.filter((g) => g.currentPrice);
-        const savingsData = giftsWithPrices
-          .map((g) => {
-            const target = parseFloat(g.targetPrice);
-            const current = parseFloat(g.currentPrice!);
+        const itemsWithPrices = userItems.filter((item) => item.currentPrice);
+        const savingsData = itemsWithPrices
+          .map((item) => {
+            const target = parseFloat(item.targetPrice);
+            const current = parseFloat(item.currentPrice!);
             const savings = target - current;
             return {
-              name: g.name,
+              name: item.name,
               savings: savings > 0 ? savings : 0,
             };
           })
@@ -96,8 +96,8 @@ async function handleRequest(request: NextRequest) {
         const emailResult = await sendWeeklyReminderEmail({
           to: profile.email!,
           userName: profile.name || "there",
-          itemsToCheck,
-          giftsWithPrices: giftsWithPrices.length,
+          itemsToCheck: itemsNeedingCheck,
+          itemsWithPrices: itemsWithPrices.length,
           potentialSavings: totalSavings,
           bestDeal,
         });
