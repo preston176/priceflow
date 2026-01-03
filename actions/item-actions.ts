@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { gifts, profiles, priceHistory } from "@/db/schema";
+import { items, profiles, priceHistory } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { extractProductMetadata, extractMetadataFromScreenshot } from "@/lib/price-scraper";
@@ -11,7 +11,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-interface AddGiftInput {
+interface AddItemInput {
   listId?: string;
   name: string;
   url?: string;
@@ -23,7 +23,7 @@ interface AddGiftInput {
   notes?: string;
 }
 
-export async function addGift(input: AddGiftInput) {
+export async function addItem(input: AddItemInput) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -40,8 +40,8 @@ export async function addGift(input: AddGiftInput) {
     throw new Error("Profile not found. Please refresh the page.");
   }
 
-  const [newGift] = await db
-    .insert(gifts)
+  const [newItem] = await db
+    .insert(items)
     .values({
       userId: profile.id,
       listId: input.listId || null,
@@ -58,10 +58,10 @@ export async function addGift(input: AddGiftInput) {
     .returning();
 
   revalidatePath("/dashboard");
-  return newGift;
+  return newItem;
 }
 
-export async function getUserGifts(listId?: string) {
+export async function getUserItems(listId?: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -78,20 +78,20 @@ export async function getUserGifts(listId?: string) {
     return [];
   }
 
-  const userGifts = await db
+  const userItems = await db
     .select()
-    .from(gifts)
+    .from(items)
     .where(
       listId
-        ? and(eq(gifts.userId, profile.id), eq(gifts.listId, listId))
-        : eq(gifts.userId, profile.id)
+        ? and(eq(items.userId, profile.id), eq(items.listId, listId))
+        : eq(items.userId, profile.id)
     )
-    .orderBy(desc(gifts.createdAt));
+    .orderBy(desc(items.createdAt));
 
-  return userGifts;
+  return userItems;
 }
 
-export async function togglePurchased(giftId: string) {
+export async function togglePurchased(itemId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -108,28 +108,28 @@ export async function togglePurchased(giftId: string) {
     throw new Error("Profile not found");
   }
 
-  const [gift] = await db
+  const [item] = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)))
+    .from(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)))
     .limit(1);
 
-  if (!gift) {
-    throw new Error("Gift not found");
+  if (!item) {
+    throw new Error("Item not found");
   }
 
   await db
-    .update(gifts)
+    .update(items)
     .set({
-      isPurchased: !gift.isPurchased,
+      isPurchased: !item.isPurchased,
       updatedAt: new Date(),
     })
-    .where(eq(gifts.id, giftId));
+    .where(eq(items.id, itemId));
 
   revalidatePath("/dashboard");
 }
 
-export async function updateGift(giftId: string, input: Partial<AddGiftInput>) {
+export async function updateItem(itemId: string, input: Partial<AddItemInput>) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -146,28 +146,28 @@ export async function updateGift(giftId: string, input: Partial<AddGiftInput>) {
     throw new Error("Profile not found");
   }
 
-  const [gift] = await db
+  const [item] = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)))
+    .from(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)))
     .limit(1);
 
-  if (!gift) {
-    throw new Error("Gift not found");
+  if (!item) {
+    throw new Error("Item not found");
   }
 
   await db
-    .update(gifts)
+    .update(items)
     .set({
       ...input,
       updatedAt: new Date(),
     })
-    .where(eq(gifts.id, giftId));
+    .where(eq(items.id, itemId));
 
   revalidatePath("/dashboard");
 }
 
-export async function deleteGift(giftId: string) {
+export async function deleteItem(itemId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -185,13 +185,13 @@ export async function deleteGift(giftId: string) {
   }
 
   await db
-    .delete(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)));
+    .delete(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)));
 
   revalidatePath("/dashboard");
 }
 
-export async function updateGiftPrice(giftId: string, newPrice: number) {
+export async function updateItemPrice(itemId: string, newPrice: number) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -208,31 +208,31 @@ export async function updateGiftPrice(giftId: string, newPrice: number) {
     throw new Error("Profile not found");
   }
 
-  const [gift] = await db
+  const [item] = await db
     .select()
-    .from(gifts)
-    .where(and(eq(gifts.id, giftId), eq(gifts.userId, profile.id)))
+    .from(items)
+    .where(and(eq(items.id, itemId), eq(items.userId, profile.id)))
     .limit(1);
 
-  if (!gift) {
-    throw new Error("Gift not found");
+  if (!item) {
+    throw new Error("Item not found");
   }
 
   const newPriceStr = newPrice.toString();
-  const targetPrice = parseFloat(gift.targetPrice);
+  const targetPrice = parseFloat(item.targetPrice);
 
   // Calculate lowest and highest prices
-  const currentLowest = gift.lowestPriceEver
-    ? Math.min(parseFloat(gift.lowestPriceEver), newPrice)
+  const currentLowest = item.lowestPriceEver
+    ? Math.min(parseFloat(item.lowestPriceEver), newPrice)
     : newPrice;
 
-  const currentHighest = gift.highestPriceEver
-    ? Math.max(parseFloat(gift.highestPriceEver), newPrice)
+  const currentHighest = item.highestPriceEver
+    ? Math.max(parseFloat(item.highestPriceEver), newPrice)
     : newPrice;
 
-  // Update gift with new price
+  // Update item with new price
   await db
-    .update(gifts)
+    .update(items)
     .set({
       currentPrice: newPriceStr,
       lastPriceCheck: new Date(),
@@ -240,18 +240,18 @@ export async function updateGiftPrice(giftId: string, newPrice: number) {
       highestPriceEver: currentHighest.toString(),
       updatedAt: new Date(),
     })
-    .where(eq(gifts.id, giftId));
+    .where(eq(items.id, itemId));
 
   // Create price history record
   await db.insert(priceHistory).values({
-    giftId,
+    itemId,
     price: newPriceStr,
     source: "manual",
     checkedAt: new Date(),
   });
 
   // Send alert if price dropped below target
-  const oldPrice = gift.currentPrice ? parseFloat(gift.currentPrice) : null;
+  const oldPrice = item.currentPrice ? parseFloat(item.currentPrice) : null;
   const isPriceDrop = newPrice < targetPrice;
   const wasAboveTarget = oldPrice ? oldPrice >= targetPrice : true;
 
@@ -260,11 +260,11 @@ export async function updateGiftPrice(giftId: string, newPrice: number) {
     await sendPriceAlertEmail({
       to: profile.email,
       userName: profile.name || "there",
-      giftName: gift.name,
+      itemName: item.name,
       oldPrice: oldPrice ? `$${oldPrice.toFixed(2)}` : `$${targetPrice.toFixed(2)}`,
       newPrice: `$${newPrice.toFixed(2)}`,
       savings: `$${(targetPrice - newPrice).toFixed(2)}`,
-      productUrl: gift.url || undefined,
+      productUrl: item.url || undefined,
     });
   }
 
@@ -316,10 +316,10 @@ export async function analyzeProductScreenshot(imageBase64: string) {
 }
 
 /**
- * Toggle automatic price updates for a gift
- * When enabled, gift will be auto-updated periodically
+ * Toggle automatic price updates for an item
+ * When enabled, item will be auto-updated periodically
  */
-export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
+export async function toggleAutoUpdate(itemId: string, enabled: boolean) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -327,30 +327,30 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
   }
 
   try {
-    // Get user profile and gift details
+    // Get user profile and item details
     const [profile] = await db
       .select()
       .from(profiles)
       .where(eq(profiles.clerkUserId, userId))
       .limit(1);
 
-    const [gift] = await db
+    const [item] = await db
       .select()
-      .from(gifts)
-      .where(eq(gifts.id, giftId))
+      .from(items)
+      .where(eq(items.id, itemId))
       .limit(1);
 
-    if (!profile || !gift) {
-      throw new Error("Profile or gift not found");
+    if (!profile || !item) {
+      throw new Error("Profile or item not found");
     }
 
     await db
-      .update(gifts)
+      .update(items)
       .set({
         autoUpdateEnabled: enabled,
         updatedAt: new Date(),
       })
-      .where(eq(gifts.id, giftId));
+      .where(eq(items.id, itemId));
 
     // Send email when auto-update is toggled
     console.log(`[toggleAutoUpdate] Preparing to send email. Enabled: ${enabled}`);
@@ -461,7 +461,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
                 <p style="font-size: 15px; color: #475569;">You just activated <strong>Auto-Update</strong> for:</p>
 
                 <div class="gift-name">
-                  ${gift.name}
+                  ${item.name}
                 </div>
 
                 <p style="font-size: 15px; color: #475569; margin-top: 25px;">Here's what happens next:</p>
@@ -478,7 +478,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
 
                 <div class="feature">
                   <div class="feature-title">💰 Best Price Alerts</div>
-                  <p style="margin: 5px 0 0 0; color: #475569;">If we find a price below your target ($${gift.targetPrice}), we'll let you know immediately!</p>
+                  <p style="margin: 5px 0 0 0; color: #475569;">If we find a price below your target ($${item.targetPrice}), we'll let you know immediately!</p>
                 </div>
 
                 <div class="feature">
@@ -503,7 +503,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
                 <div class="footer">
                   <p style="margin: 0;"><strong>PriceFlow</strong> - Smart price tracking, zero effort</p>
                   <p style="margin: 15px 0 0 0; font-size: 12px;">
-                    You're receiving this because you activated auto-update for ${gift.name}.<br>
+                    You're receiving this because you activated auto-update for ${item.name}.<br>
                     Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color: #0d9488; text-decoration: none;">dashboard</a>.
                   </p>
                 </div>
@@ -517,7 +517,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
         const result = await resend.emails.send({
           from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
           to: profile.email,
-          subject: `⚡ Auto-Update Activated: ${gift.name}`,
+          subject: `⚡ Auto-Update Activated: ${item.name}`,
           html: emailHtml,
         });
         console.log(`[toggleAutoUpdate] ✓ Email sent successfully:`, result);
@@ -618,7 +618,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
                 <p style="font-size: 15px; color: #475569;">You've turned off <strong>Auto-Update</strong> for:</p>
 
                 <div class="gift-name">
-                  ${gift.name}
+                  ${item.name}
                 </div>
 
                 <div class="info-box">
@@ -647,7 +647,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
                 <div class="footer">
                   <p style="margin: 0;"><strong>PriceFlow</strong> - Your prices, your way</p>
                   <p style="margin: 15px 0 0 0; font-size: 12px;">
-                    You're receiving this because you paused auto-update for ${gift.name}.<br>
+                    You're receiving this because you paused auto-update for ${item.name}.<br>
                     Manage your settings in your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color: #0d9488; text-decoration: none;">dashboard</a>.
                   </p>
                 </div>
@@ -661,7 +661,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
         const result = await resend.emails.send({
           from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
           to: profile.email,
-          subject: `⏸️ Auto-Update Paused: ${gift.name}`,
+          subject: `⏸️ Auto-Update Paused: ${item.name}`,
           html: emailHtml,
         });
         console.log(`[toggleAutoUpdate] ✓ Email sent successfully:`, result);
@@ -693,7 +693,7 @@ export async function toggleAutoUpdate(giftId: string, enabled: boolean) {
  * Uses QStash to run scraping + SerpAPI fallback in background
  * Sends email when complete
  */
-export async function autoUpdatePrice(giftId: string) {
+export async function autoUpdatePrice(itemId: string) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -711,7 +711,7 @@ export async function autoUpdatePrice(giftId: string) {
       throw new Error("QStash not configured");
     }
 
-    // Get user profile and gift details
+    // Get user profile and item details
     const [profile] = await db
       .select()
       .from(profiles)
@@ -722,14 +722,14 @@ export async function autoUpdatePrice(giftId: string) {
       throw new Error("Profile not found");
     }
 
-    const [gift] = await db
+    const [item] = await db
       .select()
-      .from(gifts)
-      .where(eq(gifts.id, giftId))
+      .from(items)
+      .where(eq(items.id, itemId))
       .limit(1);
 
-    if (!gift) {
-      throw new Error("Gift not found");
+    if (!item) {
+      throw new Error("Item not found");
     }
 
     // Call QStash directly from server action
@@ -741,7 +741,7 @@ export async function autoUpdatePrice(giftId: string) {
     const result = await qstash.publishJSON({
       url: `${baseUrl}/api/workers/update-price`,
       body: {
-        giftId,
+        itemId,
         userId,
       },
     });
@@ -821,8 +821,8 @@ export async function autoUpdatePrice(giftId: string) {
                 <p style="font-size: 15px; color: #475569;">We've started the automatic price update for:</p>
 
                 <div class="gift-box">
-                  <h3 style="margin: 0 0 10px 0; color: #0f766e; font-size: 18px;">${gift.name}</h3>
-                  <p style="margin: 0; color: #0891b2; font-weight: 600;">Target Price: $${parseFloat(gift.targetPrice).toFixed(2)}</p>
+                  <h3 style="margin: 0 0 10px 0; color: #0f766e; font-size: 18px;">${item.name}</h3>
+                  <p style="margin: 0; color: #0891b2; font-weight: 600;">Target Price: $${parseFloat(item.targetPrice).toFixed(2)}</p>
                 </div>
 
                 <h3 style="color: #0f766e; font-size: 17px; margin-top: 30px;">We're checking prices across multiple marketplaces:</h3>
@@ -862,7 +862,7 @@ export async function autoUpdatePrice(giftId: string) {
       await resend.emails.send({
         from: "PriceFlow <noreply@noreply.prestonmayieka.com>",
         to: profile.email,
-        subject: `Price Update Started: ${gift.name}`,
+        subject: `Price Update Started: ${item.name}`,
         html: emailHtml,
       });
     }
